@@ -103,10 +103,9 @@ app/src/main/java/com/example/quicktasks/
 
 1. **Clone the repository**
    ```bash
-   git clone <repository-url>
+   git clone https://github.com/e24141042-glitch/QuickTasks-master
    cd QuickTasks
    ```
-
 2. **Open in Android Studio**
    - Open Android Studio
    - Select "Open an existing project"
