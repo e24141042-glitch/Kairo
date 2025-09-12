@@ -52,7 +52,7 @@ The app follows MVVM (Model-View-ViewModel) architecture with the following comp
 
 ## Installation
 
-- **click on release**: download app-release.apk and install it
+- **click on release**: download ```app-release.apk``` and install it
 
 ## Usage
 
