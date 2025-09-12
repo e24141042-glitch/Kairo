@@ -45,91 +45,14 @@ The app follows MVVM (Model-View-ViewModel) architecture with the following comp
 - **Hilt**: Dependency injection for clean architecture
 - **Coroutines**: Asynchronous programming with Flow
 
-## Project Structure
-
-```
-app/src/main/java/com/example/quicktasks/
-├── data/                    # Data layer
-│   ├── TaskDao.kt          # Room DAO for database operations
-│   ├── TaskDatabase.kt     # Room database configuration
-│   └── Converters.kt       # Type converters for Room
-├── model/                   # Data models
-│   └── Task.kt             # Task entity with all properties
-├── repository/              # Repository pattern
-│   ├── TaskRepository.kt   # Task data repository
-│   └── SettingsRepository.kt # Settings data repository
-├── viewmodel/               # ViewModels
-│   ├── HomeViewModel.kt    # Home screen state management
-│   ├── AddTaskViewModel.kt # Add/Edit task state management
-│   ├── TaskDetailsViewModel.kt # Task details state management
-│   ├── CategoriesViewModel.kt # Categories screen state management
-│   └── SettingsViewModel.kt # Settings screen state management
-├── ui/                      # UI layer
-│   ├── theme/              # App theming
-│   │   ├── Color.kt        # Color definitions
-│   │   ├── Theme.kt        # Material theme setup
-│   │   ├── Type.kt         # Typography definitions
-│   │   └── ThemeManager.kt # Theme state management
-│   ├── components/         # Reusable UI components
-│   │   ├── TaskCard.kt     # Task card component
-│   │   └── SwipeableTaskCard.kt # Swipeable task card
-│   ├── screens/            # Screen composables
-│   │   ├── HomeScreen.kt   # Main home screen
-│   │   ├── AddTaskScreen.kt # Add/Edit task screen
-│   │   ├── TaskDetailsScreen.kt # Task details screen
-│   │   ├── CategoriesScreen.kt # Categories screen
-│   │   └── SettingsScreen.kt # Settings screen
-│   └── navigation/         # Navigation setup
-│       ├── Screen.kt       # Screen route definitions
-│       └── QuickTasksNavigation.kt # Navigation host
-├── notifications/          # Notification system
-│   ├── NotificationHelper.kt # Notification management
-│   ├── TaskActionReceiver.kt # Action button handling
-│   └── TaskNotificationWorker.kt # WorkManager for scheduling
-├── di/                     # Dependency injection
-│   └── DatabaseModule.kt   # Hilt database module
-├── MainActivity.kt         # Main activity
-└── QuickTasksApplication.kt # Application class
-```
-
-## Setup Instructions
-
 ### Prerequisites
 - Android Studio Arctic Fox or later
 - Android SDK 24 or higher
 - Kotlin 1.9.10 or later
 
-### Installation
+## Installation
 
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/e24141042-glitch/QuickTasks-master
-   cd QuickTasks
-   ```
-2. **Open in Android Studio**
-   - Open Android Studio
-   - Select "Open an existing project"
-   - Navigate to the QuickTasks folder and open it
-
-3. **Sync the project**
-   - Android Studio will automatically sync the project
-   - Wait for the sync to complete
-
-4. **Run the app**
-   - Connect an Android device or start an emulator
-   - Click the "Run" button or press Shift+F10
-
-### Dependencies
-
-The app uses the following key dependencies:
-
-- **Jetpack Compose**: 1.6.0
-- **Material 3**: 1.2.0
-- **Navigation Compose**: 2.7.7
-- **Room**: 2.6.1
-- **Hilt**: 2.48
-- **WorkManager**: 2.9.0
-- **DataStore**: 1.0.0
+- **click on release**: download app-release.apk and install it
 
 ## Usage
 
