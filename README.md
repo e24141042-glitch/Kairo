@@ -1,103 +1,110 @@
-# QuickTasks - Android To-Do List App
+# Kairo - Modern Task Management App
 
-A modern, feature-rich Android to-do list application built with Jetpack Compose and MVVM architecture.
+![Kairo Banner](app/src/main/ic_launcher-playstore.png) <!-- Add your banner image if available -->
 
-## Features
+Kairo (from the Greek word for "time") is an elegant and intuitive task management application designed to help you stay organized and productive. Built with modern Android development practices, Kairo combines a beautiful Material 3 design with powerful features to manage your daily tasks efficiently.
 
-### Core Functionality
-- ✅ Create, edit, delete, and mark tasks as complete/incomplete
-- 📅 Set due dates with date picker
-- ⏰ Set reminder times with notifications
-- 🏷️ Organize tasks with categories/tags
-- 🔄 Support for recurring tasks (daily, weekly, monthly)
-- 🔍 Search and filter tasks by title, category, or priority
-- 📊 Daily streak tracking and productivity stats
+## ✨ Features
 
-### User Interface
-- 🎨 Modern Material 3 design with smooth animations
-- 🌙 Light and dark theme support
-- 👆 Swipe gestures for quick task completion and deletion
-- 📱 Responsive layout for different screen sizes
-- 🎯 Intuitive navigation between screens
+### 🎯 Task Management
+- Create, edit, and organize tasks with ease
+- Mark tasks as complete with a simple tap
+- Set priorities and due dates for better organization
+- Categorize tasks for better organization
+- Search and filter tasks to find what you need quickly
 
-### Notifications
-- 🔔 Scheduled reminders based on task due dates
-- ⏰ Custom notification times
-- 📱 Actionable notifications (complete, snooze)
-- 📈 Daily summary notifications
+### 🎨 Personalized Experience
+- Beautiful Material 3 design with smooth animations
+- Light and dark theme support (auto or manual)
+- Customizable app appearance with accent colors
+- Daily motivational quotes to keep you inspired (configurable)
+- Intuitive and responsive interface
 
-## Architecture
+### ⚡ Productivity Boosters
+- Task completion statistics and insights
+- Clean and focused interface to minimize distractions
+- Quick actions for common tasks
+- Swipe gestures for quick task management
 
-The app follows MVVM (Model-View-ViewModel) architecture with the following components:
+## 🏗️ Technical Stack
 
-### Data Layer
-- **Room Database**: Local data persistence with Task entity
-- **Repository Pattern**: Clean data access abstraction
-- **DataStore**: User preferences and settings storage
+- **Language**: 100% Kotlin
+- **UI**: Jetpack Compose with Material 3
+- **Architecture**: MVVM (Model-View-ViewModel)
+- **Asynchronous**: Kotlin Coroutines with Flow
+- **Dependency Injection**: Hilt
+- **Local Storage**: Room Database
+- **Preferences**: DataStore
+- **Navigation**: Navigation Compose
 
-### UI Layer
-- **Jetpack Compose**: Modern declarative UI toolkit
-- **Navigation Compose**: Type-safe navigation between screens
-- **Material 3**: Latest Material Design components
+## 📱 Screenshots
 
-### Business Logic
-- **ViewModels**: State management and business logic
-- **Hilt**: Dependency injection for clean architecture
-- **Coroutines**: Asynchronous programming with Flow
+<!-- Add your app screenshots here -->
+| Home Screen | Task Details | Settings |
+|-------------|--------------|-----------|
+| ![Home](screenshots/home.png) | ![Task Details](screenshots/task_details.png) | ![Settings](screenshots/settings.png) |
+
+## 🚀 Getting Started
 
 ### Prerequisites
-- Android Studio Arctic Fox or later
-- Android SDK 24 or higher
+- Android Studio Flamingo (2022.2.1) or newer
+- Android SDK 24 (Android 7.0) or higher
 - Kotlin 1.9.10 or later
 
-## Installation
+### Installation
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/yourusername/kairo.git
+   ```
+2. Open the project in Android Studio
+3. Sync the project with Gradle files
+4. Run the app on an emulator or physical device
 
-- **click on release**: download ```app-release.apk``` and install it
+### Building from Source
+1. Ensure you have the latest version of Android Studio installed
+2. Open the project in Android Studio
+3. Wait for the project to sync and download all dependencies
+4. Click on "Run 'app'" or press Shift+F10
 
-## Usage
+## 🛠️ Features in Detail
 
-### Creating Tasks
-1. Tap the "+" button on the home screen
-2. Enter task title (required)
-3. Add description, due date, priority, and category
-4. Set reminder time if needed
-5. Enable recurring if desired
-6. Tap "Save"
+### Task Management
+- **Create Tasks**: Quickly add tasks with titles, descriptions, and due dates
+- **Organize**: Categorize tasks and set priorities
+- **Complete**: Mark tasks as complete with a simple tap
+- **Search**: Find tasks instantly with the search functionality
 
-### Managing Tasks
-- **Complete**: Tap the checkbox or swipe right
-- **Delete**: Tap the delete icon or swipe left
-- **Edit**: Tap on a task to view details, then tap "Edit"
-- **Search**: Use the search bar on the home screen
-
-### Categories
-- View all categories on the Categories screen
-- Filter tasks by category
-- Categories are automatically created when you add tasks
+### Customization
+- **Themes**: Choose between light and dark theme
+- **Daily Quotes**: Toggle daily motivational quotes on the home screen
+- **Task Display**: Customize how tasks are displayed and sorted
 
 ### Settings
-- Toggle dark/light theme
-- Enable/disable notifications
-- Set notification time
-- Enable cloud backup (placeholder)
-- Clear all data
+- **Appearance**: Customize the app's look and feel
+- **Notifications**: Configure task reminders and notifications
+- **Data**: Backup and restore your tasks
 
-## Features in Detail
+## 🤝 Contributing
 
-### Task Properties
-- **Title**: Required field for task name
-- **Description**: Optional detailed description
-- **Due Date**: Optional deadline with date picker
-- **Priority**: Low, Medium, High, or Urgent
-- **Category**: Custom categories for organization
-- **Reminder**: Optional notification time
-- **Recurring**: Daily, weekly, or monthly repetition
-- **Streak**: Automatic tracking of completion streaks
+Contributions are welcome! Please feel free to submit a Pull Request.
 
-### Notifications
-- **Task Reminders**: Notifications at specified times
-- **Overdue Alerts**: Notifications for overdue tasks
-- **Daily Summary**: Productivity summary notifications
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 🙏 Acknowledgments
+
+- [Jetpack Compose](https://developer.android.com/jetpack/compose)
+- [Material Design 3](https://m3.material.io/)
+- [Kotlin Coroutines](https://kotlinlang.org/docs/coroutines-overview.html)
+- [Hilt](https://developer.android.com/training/dependency-injection/hilt-android)
+- [Room](https://developer.android.com/training/data-storage/room)
 - **Action Buttons**: Complete or snooze directly from notifications
 
 ### Themes

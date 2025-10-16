@@ -1,18 +1,17 @@
-// Top-level build.gradle.kts（QuickTasks/app/build.gradle.kts）
+// Kairo To-Do App build.gradle.kts
 plugins {
     id("com.android.application")
     kotlin("android")
-    kotlin("kapt")
-    id("dagger.hilt.android.plugin")
+    id("com.google.devtools.ksp")
 }
 
 android {
-    namespace = "com.example.quicktasks"
-    compileSdk = 34
+    namespace = "com.kairo.app"
+    compileSdk = 35
 
     defaultConfig {
-        applicationId = "com.example.kairo"
-        minSdk = 24
+        applicationId = "com.kairo.app"
+        minSdk = 26
         targetSdk = 34
         versionCode = 1
         versionName = "1.0"
@@ -68,7 +67,7 @@ dependencies {
     // Room Database
     implementation("androidx.room:room-runtime:2.6.1")
     implementation("androidx.room:room-ktx:2.6.1")
-    kapt("androidx.room:room-compiler:2.6.1")
+    ksp("androidx.room:room-compiler:2.6.1")
 
     // Kotlin Coroutines
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
@@ -76,14 +75,11 @@ dependencies {
     // Date Picker
     implementation("io.github.vanpra.compose-material-dialogs:datetime:0.9.0")
 
-    // Work Manager for notifications
+    // Work Manager (optional placeholder for reminders)
     implementation("androidx.work:work-runtime-ktx:2.9.0")
 
     // DataStore for settings
     implementation("androidx.datastore:datastore-preferences:1.0.0")
 
-    // Hilt for dependency injection
-    implementation("com.google.dagger:hilt-android:2.48")
-    implementation("androidx.hilt:hilt-navigation-compose:1.1.0")
-    kapt("com.google.dagger:hilt-compiler:2.48")
+    // No Hilt - using manual DI via AppContainer
 }
