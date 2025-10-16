@@ -1,5 +1,6 @@
 package com.kairo.app.ui.screens
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
@@ -7,9 +8,27 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.CalendarToday
+import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Category
 import androidx.compose.material.icons.filled.PriorityHigh
-import androidx.compose.material3.*
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDialog
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TimePicker
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.rememberDatePickerState
+import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -19,7 +38,11 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.kairo.app.data.Task
 import com.kairo.app.viewmodel.AddEditTaskViewModel
+import java.time.Instant
+import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.LocalTime
+import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -230,12 +253,23 @@ private fun CategoryInput(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun DueDateSelector(
     dueDate: LocalDateTime?,
     onDueDateChange: (LocalDateTime?) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val formatter = remember {
+        DateTimeFormatter.ofPattern("MMM dd, yyyy HH:mm")
+    }
+    val initialDateTime = remember(dueDate) {
+        (dueDate ?: LocalDateTime.now()).withSecond(0).withNano(0)
+    }
+    var showDatePicker by remember { mutableStateOf(false) }
+    var showTimePicker by remember { mutableStateOf(false) }
+    var pendingDate by remember { mutableStateOf<LocalDate?>(null) }
+
     Column(modifier = modifier) {
         Row(
             verticalAlignment = Alignment.CenterVertically
@@ -252,25 +286,119 @@ private fun DueDateSelector(
                 fontWeight = FontWeight.Medium
             )
         }
-        
+
         Spacer(modifier = Modifier.height(8.dp))
-        
+
         OutlinedTextField(
-            value = dueDate?.format(DateTimeFormatter.ofPattern("MMM dd, yyyy HH:mm")) ?: "",
-            onValueChange = { /* TODO: Implement date picker */ },
+            value = dueDate?.format(formatter) ?: "",
+            onValueChange = { },
             label = { Text("Due Date") },
             placeholder = { Text("Optional") },
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable { showDatePicker = true },
             readOnly = true,
             trailingIcon = {
-                IconButton(
-                    onClick = { /* TODO: Open date picker */ }
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.CalendarToday,
-                        contentDescription = "Select Date"
-                    )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    if (dueDate != null) {
+                        IconButton(onClick = { onDueDateChange(null) }) {
+                            Icon(
+                                imageVector = Icons.Default.Clear,
+                                contentDescription = "Clear Due Date"
+                            )
+                        }
+                    }
+                    IconButton(onClick = { showDatePicker = true }) {
+                        Icon(
+                            imageVector = Icons.Default.CalendarToday,
+                            contentDescription = "Select Date"
+                        )
+                    }
                 }
+            }
+        )
+    }
+
+    if (showDatePicker) {
+        val datePickerState = rememberDatePickerState(
+            initialSelectedDateMillis = initialDateTime.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
+        )
+        DatePickerDialog(
+            onDismissRequest = {
+                showDatePicker = false
+                pendingDate = null
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        val millis = datePickerState.selectedDateMillis
+                        if (millis != null) {
+                            val selectedDate = Instant.ofEpochMilli(millis)
+                                .atZone(ZoneId.systemDefault())
+                                .toLocalDate()
+                            pendingDate = selectedDate
+                            showDatePicker = false
+                            showTimePicker = true
+                        } else {
+                            showDatePicker = false
+                            pendingDate = null
+                        }
+                    }
+                ) {
+                    Text("Next")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = {
+                    showDatePicker = false
+                    pendingDate = null
+                }) {
+                    Text("Cancel")
+                }
+            }
+        ) {
+            DatePicker(state = datePickerState)
+        }
+    }
+
+    if (showTimePicker) {
+        val targetDate = pendingDate ?: initialDateTime.toLocalDate()
+        val timePickerState = rememberTimePickerState(
+            initialHour = initialDateTime.hour,
+            initialMinute = initialDateTime.minute,
+            is24Hour = true
+        )
+        AlertDialog(
+            onDismissRequest = {
+                showTimePicker = false
+                pendingDate = null
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    val selectedDateTime = LocalDateTime.of(
+                        targetDate,
+                        LocalTime.of(timePickerState.hour, timePickerState.minute)
+                    ).withSecond(0).withNano(0)
+                    onDueDateChange(selectedDateTime)
+                    showTimePicker = false
+                    pendingDate = null
+                }) {
+                    Text("Save")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = {
+                    showTimePicker = false
+                    pendingDate = null
+                }) {
+                    Text("Cancel")
+                }
+            },
+            text = {
+                TimePicker(state = timePickerState)
+            },
+            title = {
+                Text("Select time")
             }
         )
     }

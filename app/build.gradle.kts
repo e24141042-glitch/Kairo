@@ -82,4 +82,7 @@ dependencies {
     implementation("androidx.datastore:datastore-preferences:1.0.0")
 
     // No Hilt - using manual DI via AppContainer
+
+    // Testing
+    testImplementation("junit:junit:4.13.2")
 }
