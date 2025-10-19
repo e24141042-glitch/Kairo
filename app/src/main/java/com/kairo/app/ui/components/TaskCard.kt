@@ -1,5 +1,6 @@
 package com.kairo.app.ui.components
 
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
@@ -11,11 +12,13 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Circle
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Repeat
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
@@ -41,12 +44,6 @@ fun TaskCard(
         Priority.HIGH -> com.kairo.app.ui.theme.PriorityHigh
         Priority.URGENT -> com.kairo.app.ui.theme.PriorityUrgent
     }
-    
-    val animatedProgress = animateFloatAsState(
-        targetValue = if (task.isCompleted) 1f else 0f,
-        animationSpec = tween(durationMillis = 300),
-        label = "completion_animation"
-    )
 
     val dateFormatter = remember { SimpleDateFormat("MMM dd, yyyy", Locale.getDefault()) }
     
@@ -225,4 +222,3 @@ fun TaskCard(
         }
     }
 }
-

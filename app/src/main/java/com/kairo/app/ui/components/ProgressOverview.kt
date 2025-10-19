@@ -20,10 +20,17 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.kairo.app.repository.TaskStatistics
+import androidx.compose.animation.core.animateIntAsState
+
+import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.ArrowDropUp
+import androidx.compose.animation.AnimatedVisibility
 
 @Composable
 fun ProgressOverview(
     statistics: TaskStatistics,
+    isMinimized: Boolean,
+    onToggleMinimize: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val animatedProgress = animateFloatAsState(
@@ -41,70 +48,86 @@ fun ProgressOverview(
                 .fillMaxWidth()
                 .padding(20.dp)
         ) {
-            Text(
-                text = "Progress Overview",
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurface
-            )
-            
-            Spacer(modifier = Modifier.height(16.dp))
-            
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceEvenly,
+                horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Progress circle
-                Box(
-                    modifier = Modifier.size(80.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    CircularProgressIndicator(
-                        progress = animatedProgress.value,
-                        modifier = Modifier.size(80.dp),
-                        strokeWidth = 8.dp,
-                        strokeCap = StrokeCap.Round,
-                        color = MaterialTheme.colorScheme.primary,
-                        trackColor = MaterialTheme.colorScheme.surfaceVariant
-                    )
-                    
-                    Text(
-                        text = "${statistics.completionPercentage}%",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.primary
+                Text(
+                    text = "Progress Overview",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                IconButton(onClick = onToggleMinimize) {
+                    Icon(
+                        imageVector = if (isMinimized) Icons.Default.ArrowDropDown else Icons.Default.ArrowDropUp,
+                        contentDescription = if (isMinimized) "Expand" else "Collapse"
                     )
                 }
-                
-                // Statistics
-                Column(
-                    horizontalAlignment = Alignment.Start
-                ) {
-                    StatisticItem(
-                        icon = Icons.Default.Task,
-                        label = "Total",
-                        value = statistics.totalTasks.toString(),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+            }
+            
+            AnimatedVisibility(visible = !isMinimized) {
+                Column {
+                    Spacer(modifier = Modifier.height(16.dp))
                     
-                    Spacer(modifier = Modifier.height(8.dp))
-                    
-                    StatisticItem(
-                        icon = Icons.Default.CheckCircle,
-                        label = "Completed",
-                        value = statistics.completedTasks.toString(),
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                    
-                    Spacer(modifier = Modifier.height(8.dp))
-                    
-                    StatisticItem(
-                        icon = Icons.Default.Pending,
-                        label = "Pending",
-                        value = statistics.pendingTasks.toString(),
-                        color = MaterialTheme.colorScheme.secondary
-                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceEvenly,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        // Progress circle
+                        Box(
+                            modifier = Modifier.size(80.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            CircularProgressIndicator(
+                                progress = { animatedProgress.value },
+                                modifier = Modifier.size(80.dp),
+                                strokeWidth = 8.dp,
+                                strokeCap = StrokeCap.Round,
+                                color = MaterialTheme.colorScheme.primary,
+                                trackColor = MaterialTheme.colorScheme.surfaceVariant
+                            )
+                            
+                            Text(
+                                text = "${statistics.completionPercentage}%",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                        
+                        // Statistics
+                        Column(
+                            horizontalAlignment = Alignment.Start
+                        ) {
+                            StatisticItem(
+                                icon = Icons.Default.Task,
+                                label = "Total",
+                                value = statistics.totalTasks.toString(),
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            
+                            Spacer(modifier = Modifier.height(8.dp))
+                            
+                            StatisticItem(
+                                icon = Icons.Default.CheckCircle,
+                                label = "Completed",
+                                value = statistics.completedTasks.toString(),
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                            
+                            Spacer(modifier = Modifier.height(8.dp))
+                            
+                            StatisticItem(
+                                icon = Icons.Default.Pending,
+                                label = "Pending",
+                                value = statistics.pendingTasks.toString(),
+                                color = MaterialTheme.colorScheme.secondary
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -119,6 +142,12 @@ private fun StatisticItem(
     color: androidx.compose.ui.graphics.Color,
     modifier: Modifier = Modifier
 ) {
+    // Animate the value to count up when it appears
+    val animatedValue by animateIntAsState(
+        targetValue = value.toIntOrNull() ?: 0,
+        animationSpec = tween(durationMillis = 1000)
+    )
+
     Row(
         modifier = modifier,
         verticalAlignment = Alignment.CenterVertically
@@ -144,7 +173,7 @@ private fun StatisticItem(
         
         Column {
             Text(
-                text = value,
+                text = animatedValue.toString(),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
                 color = color

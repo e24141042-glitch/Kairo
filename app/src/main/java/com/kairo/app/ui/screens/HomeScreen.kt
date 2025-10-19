@@ -19,8 +19,22 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.kairo.app.ui.components.*
 import com.kairo.app.viewmodel.TaskViewModel
 import com.kairo.app.viewmodel.SettingsViewModel
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.runtime.remember
+import androidx.compose.ui.unit.dp
 
-@OptIn(ExperimentalMaterial3Api::class)
+
+
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun HomeScreen(
     onNavigateToAddTask: () -> Unit,
@@ -34,6 +48,7 @@ fun HomeScreen(
     val searchQuery by taskViewModel.searchQuery.collectAsState()
     val filterState by taskViewModel.filterState.collectAsState()
     val userPreferences by settingsViewModel.userPreferences.collectAsState(initial = com.kairo.app.data.UserPreferences())
+    val isProgressMinimized = remember { mutableStateOf(false) }
     
     val listState = rememberLazyListState()
     
@@ -55,6 +70,12 @@ fun HomeScreen(
                 )
             },
             actions = {
+                IconButton(onClick = onNavigateToAddTask) {
+                    Icon(
+                        imageVector = Icons.Default.Add,
+                        contentDescription = "Add Task"
+                    )
+                }
                 IconButton(onClick = onNavigateToSettings) {
                     Icon(
                         imageVector = Icons.Default.Settings,
@@ -73,13 +94,29 @@ fun HomeScreen(
         ) {
             // Progress Overview
             item {
-                ProgressOverview(statistics = statistics)
+                AnimatedVisibility(
+                    visible = true, // You can change this to a state to control visibility
+                    enter = fadeIn(animationSpec = tween(durationMillis = 500)) + slideInVertically(initialOffsetY = { -40 }),
+                    exit = fadeOut(animationSpec = tween(durationMillis = 500)) + slideOutVertically(targetOffsetY = { -40 })
+                ) {
+                    ProgressOverview(
+                        statistics = statistics,
+                        isMinimized = isProgressMinimized.value,
+                        onToggleMinimize = { isProgressMinimized.value = !isProgressMinimized.value }
+                    )
+                }
             }
             
             // Daily Quote
             if (userPreferences.dailyQuoteEnabled) {
                 item {
-                    DailyQuoteCard()
+                    AnimatedVisibility(
+                        visible = true, // You can change this to a state to control visibility
+                        enter = fadeIn(animationSpec = tween(durationMillis = 500, delayMillis = 200)) + slideInVertically(initialOffsetY = { -40 }),
+                        exit = fadeOut(animationSpec = tween(durationMillis = 500)) + slideOutVertically(targetOffsetY = { -40 })
+                    ) {
+                        DailyQuoteCard()
+                    }
                 }
             }
             
@@ -135,31 +172,19 @@ fun HomeScreen(
                     items = uiState.tasks,
                     key = { it.id }
                 ) { task ->
-                    TaskCard(
-                        task = task,
-                        onTaskClick = { onNavigateToEditTask(task.id) },
-                        onToggleCompletion = taskViewModel::toggleTaskCompletion,
-                        modifier = Modifier.fillMaxWidth()
-                    )
+                    AnimatedVisibility(
+                        visible = true, // You can change this to a state to control visibility
+                        enter = fadeIn(animationSpec = tween(durationMillis = 500)) + slideInVertically(initialOffsetY = { -40 }),
+                        exit = fadeOut(animationSpec = tween(durationMillis = 500)) + slideOutVertically(targetOffsetY = { -40 })
+                    ) {
+                        TaskCard(
+                            task = task,
+                            onTaskClick = { onNavigateToEditTask(task.id) },
+                            onToggleCompletion = taskViewModel::toggleTaskCompletion
+                        )
+                    }
                 }
             }
-        }
-    }
-    
-    // Floating Action Button
-    Box(
-        modifier = Modifier.fillMaxSize()
-    ) {
-        FloatingActionButton(
-            onClick = onNavigateToAddTask,
-            modifier = Modifier
-                .padding(16.dp)
-                .align(Alignment.BottomEnd)
-        ) {
-            Icon(
-                imageVector = Icons.Default.Add,
-                contentDescription = "Add Task"
-            )
         }
     }
 }
