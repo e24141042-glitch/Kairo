@@ -20,11 +20,47 @@ import com.kairo.app.ui.screens.HomeScreen
 import com.kairo.app.ui.screens.SettingsScreen
 import com.kairo.app.ui.theme.KairoTheme
 import com.kairo.app.di.AppContainer
+
+import androidx.activity.result.ActivityResultLauncher
+import androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult
+import androidx.compose.runtime.remember
+import androidx.compose.ui.platform.LocalContext
+import androidx.activity.compose.rememberLauncherForActivityResult
+import android.util.Log
+import android.content.Intent
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.launch
+
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.WorkManager
+import com.kairo.app.data.google_calendar.GoogleCalendarSyncWorker
+import java.util.concurrent.TimeUnit
+
 class MainActivity : ComponentActivity() {
+
+    private lateinit var googleSignInLauncher: ActivityResultLauncher<Intent>
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        com.kairo.app.di.AppContainer.init(applicationContext)
         enableEdgeToEdge()
+
+        googleSignInLauncher = registerForActivityResult(StartActivityForResult()) { result ->
+            val data: Intent? = result.data
+            AppContainer.googleCalendarService.handleSignInResult(
+                data,
+                onSuccess = { email ->
+                    Log.d("MainActivity", "Google Sign-In successful for: $email")
+                    lifecycleScope.launch {
+                        AppContainer.userPreferencesRepository.updateGoogleCalendarAccount(email)
+                    }
+                },
+                onFailure = {
+                    Log.e("MainActivity", "Google Sign-In failed.")
+                    // TODO: Show error message to user
+                }
+            )
+        }
+
         setContent {
             val prefs by AppContainer.userPreferencesRepository
                 .userPreferences
@@ -35,7 +71,27 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    KairoApp()
+                    KairoApp(
+                        onSignInGoogleCalendar = {
+                            val signInIntent = AppContainer.googleCalendarService.getSignInIntent()
+                            googleSignInLauncher.launch(signInIntent)
+                        }
+                    )
+                }
+            }
+        }
+    }
+
+    override fun onStop() {
+        super.onStop()
+        lifecycleScope.launch {
+            AppContainer.userPreferencesRepository.userPreferences.collect { prefs ->
+                prefs.googleCalendarAccount?.let { accountName ->
+                    Log.d("MainActivity", "App stopping, enqueuing Google Calendar sync work...")
+                    val syncWorkRequest = OneTimeWorkRequestBuilder<GoogleCalendarSyncWorker>()
+                        .setInitialDelay(10, TimeUnit.SECONDS) // Delay to allow app to close gracefully
+                        .build()
+                    WorkManager.getInstance(applicationContext).enqueue(syncWorkRequest)
                 }
             }
         }
@@ -43,9 +99,11 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun KairoApp() {
+fun KairoApp(
+    onSignInGoogleCalendar: () -> Unit
+) {
     val navController = rememberNavController()
-    
+
     NavHost(
         navController = navController,
         startDestination = "home"
@@ -63,7 +121,7 @@ fun KairoApp() {
                 }
             )
         }
-        
+
         composable("add_task") {
             AddEditTaskScreen(
                 onNavigateBack = {
@@ -71,7 +129,7 @@ fun KairoApp() {
                 }
             )
         }
-        
+
         composable("edit_task/{taskId}") { backStackEntry ->
             val taskId = backStackEntry.arguments?.getString("taskId")?.toLongOrNull() ?: 0L
             AddEditTaskScreen(
@@ -81,12 +139,13 @@ fun KairoApp() {
                 }
             )
         }
-        
+
         composable("settings") {
             SettingsScreen(
                 onNavigateBack = {
                     navController.popBackStack()
-                }
+                },
+                onSignInGoogleCalendar = onSignInGoogleCalendar
             )
         }
     }

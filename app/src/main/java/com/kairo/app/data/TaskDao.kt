@@ -2,6 +2,7 @@ package com.kairo.app.data
 
 import androidx.room.*
 import kotlinx.coroutines.flow.Flow
+import java.util.Date
 
 /**
  * Data Access Object for Task entity
@@ -19,7 +20,7 @@ interface TaskDao {
     /**
      * Get completed tasks
      */
-    @Query("SELECT * FROM tasks WHERE isCompleted = 1 ORDER BY updatedAt DESC")
+    @Query("SELECT * FROM tasks WHERE isCompleted = 1 ORDER BY completedAt DESC")
     fun getCompletedTasks(): Flow<List<Task>>
     
     /**
@@ -32,7 +33,7 @@ interface TaskDao {
      * Get tasks by priority
      */
     @Query("SELECT * FROM tasks WHERE priority = :priority ORDER BY createdAt DESC")
-    fun getTasksByPriority(priority: Task.Priority): Flow<List<Task>>
+    fun getTasksByPriority(priority: Priority): Flow<List<Task>>
     
     /**
      * Get tasks by category
@@ -49,14 +50,14 @@ interface TaskDao {
     /**
      * Get overdue tasks
      */
-    @Query("SELECT * FROM tasks WHERE dueDate < datetime('now') AND isCompleted = 0 ORDER BY dueDate ASC")
-    fun getOverdueTasks(): Flow<List<Task>>
+    @Query("SELECT * FROM tasks WHERE dueDateTime < :currentDate AND isCompleted = 0 ORDER BY dueDateTime ASC")
+    fun getOverdueTasks(currentDate: Date): Flow<List<Task>>
     
     /**
      * Get tasks due today
      */
-    @Query("SELECT * FROM tasks WHERE date(dueDate) = date('now') AND isCompleted = 0 ORDER BY dueDate ASC")
-    fun getTasksDueToday(): Flow<List<Task>>
+    @Query("SELECT * FROM tasks WHERE strftime('%Y-%m-%d', datetime(dueDateTime / 1000, 'unixepoch')) = strftime('%Y-%m-%d', datetime(:currentDate / 1000, 'unixepoch')) AND isCompleted = 0 ORDER BY dueDateTime ASC")
+    fun getTasksDueToday(currentDate: Date): Flow<List<Task>>
     
     /**
      * Get task by ID
@@ -115,12 +116,12 @@ interface TaskDao {
     /**
      * Mark task as completed
      */
-    @Query("UPDATE tasks SET isCompleted = 1, updatedAt = :updatedAt WHERE id = :taskId")
-    suspend fun markTaskCompleted(taskId: Long, updatedAt: String)
+    @Query("UPDATE tasks SET isCompleted = 1, completedAt = :completedAt WHERE id = :taskId")
+    suspend fun markTaskCompleted(taskId: Long, completedAt: Date?)
     
     /**
      * Mark task as pending
      */
-    @Query("UPDATE tasks SET isCompleted = 0, updatedAt = :updatedAt WHERE id = :taskId")
-    suspend fun markTaskPending(taskId: Long, updatedAt: String)
+    @Query("UPDATE tasks SET isCompleted = 0, completedAt = :completedAt WHERE id = :taskId")
+    suspend fun markTaskPending(taskId: Long, completedAt: Date?)
 }

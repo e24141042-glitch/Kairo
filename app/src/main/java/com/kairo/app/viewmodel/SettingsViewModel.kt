@@ -110,4 +110,13 @@ class SettingsViewModel(
             taskRepository.deleteCompletedTasks()
         }
     }
+
+    /**
+     * Disconnect Google Calendar account
+     */
+    fun disconnectGoogleCalendar() {
+        viewModelScope.launch {
+            userPreferencesRepository.updateGoogleCalendarAccount(null)
+        }
+    }
 }

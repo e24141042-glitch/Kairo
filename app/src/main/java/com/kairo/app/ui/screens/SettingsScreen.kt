@@ -10,6 +10,7 @@ import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.FormatQuote
 import androidx.compose.material.icons.filled.Sort
 import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -19,15 +20,18 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.kairo.app.data.UserPreferences
 import com.kairo.app.viewmodel.SettingsViewModel
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
     onNavigateBack: () -> Unit,
+    onSignInGoogleCalendar: () -> Unit,
     viewModel: SettingsViewModel = viewModel()
 ) {
     val userPreferences by viewModel.userPreferences.collectAsState(initial = UserPreferences())
-    
+    val snackbarHostState = remember { SnackbarHostState() }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -46,7 +50,8 @@ fun SettingsScreen(
                     }
                 }
             )
-        }
+        },
+        snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { paddingValues ->
         Column(
             modifier = Modifier
@@ -69,7 +74,7 @@ fun SettingsScreen(
                         onCheckedChange = viewModel::updateDarkTheme
                     )
                 }
-                
+
                 // Show Completed Tasks Toggle
                 SettingsItem(
                     icon = Icons.Default.Visibility,
@@ -81,7 +86,7 @@ fun SettingsScreen(
                         onCheckedChange = viewModel::updateShowCompletedTasks
                     )
                 }
-                
+
                 // Daily Quote Toggle
                 SettingsItem(
                     icon = Icons.Default.FormatQuote,
@@ -94,7 +99,7 @@ fun SettingsScreen(
                     )
                 }
             }
-            
+
             // Task Management Section
             SettingsSection(title = "Task Management") {
                 // Sort Order
@@ -102,7 +107,7 @@ fun SettingsScreen(
                     currentSortOrder = userPreferences.sortOrder,
                     onSortOrderChange = viewModel::updateSortOrder
                 )
-                
+
                 // Default Category
                 OutlinedTextField(
                     value = userPreferences.defaultCategory,
@@ -111,7 +116,34 @@ fun SettingsScreen(
                     modifier = Modifier.fillMaxWidth()
                 )
             }
-            
+
+            // Integrations Section
+            SettingsSection(title = "Integrations") {
+                val connectedAccount = userPreferences.googleCalendarAccount
+                val coroutineScope = rememberCoroutineScope()
+
+                SettingsItem(
+                    icon = Icons.Default.CalendarMonth,
+                    title = "Google Calendar Sync",
+                    subtitle = if (connectedAccount != null) "Connected as $connectedAccount" else "Not connected"
+                ) {
+                    if (connectedAccount != null) {
+                        Button(onClick = {
+                            viewModel.disconnectGoogleCalendar()
+                            coroutineScope.launch {
+                                snackbarHostState.showSnackbar("Disconnected from Google Calendar")
+                            }
+                        }) {
+                            Text("Disconnect")
+                        }
+                    } else {
+                        Button(onClick = onSignInGoogleCalendar) {
+                            Text("Connect")
+                        }
+                    }
+                }
+            }
+
             // Data Management Section
             SettingsSection(title = "Data Management") {
                 // Delete Completed Tasks
@@ -129,7 +161,7 @@ fun SettingsScreen(
                         Text("Clear")
                     }
                 }
-                
+
                 // Delete All Tasks
                 SettingsItem(
                     icon = Icons.Default.Delete,
@@ -146,7 +178,7 @@ fun SettingsScreen(
                     }
                 }
             }
-            
+
             // About Section
             SettingsSection(title = "About") {
                 Card(
@@ -193,7 +225,7 @@ private fun SettingsSection(
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.primary
         )
-        
+
         Card(
             modifier = Modifier.fillMaxWidth()
         ) {
@@ -227,9 +259,9 @@ private fun SettingsItem(
                 modifier = Modifier.size(24.dp),
                 tint = MaterialTheme.colorScheme.primary
             )
-            
+
             Spacer(modifier = Modifier.width(16.dp))
-            
+
             Column {
                 Text(
                     text = title,
@@ -243,7 +275,7 @@ private fun SettingsItem(
                 )
             }
         }
-        
+
         content()
     }
 }
@@ -256,7 +288,7 @@ private fun SortOrderSelector(
     modifier: Modifier = Modifier
 ) {
     var expanded by remember { mutableStateOf(false) }
-    
+
     Column(modifier = modifier) {
         Row(
             verticalAlignment = Alignment.CenterVertically
@@ -267,9 +299,9 @@ private fun SortOrderSelector(
                 modifier = Modifier.size(24.dp),
                 tint = MaterialTheme.colorScheme.primary
             )
-            
+
             Spacer(modifier = Modifier.width(16.dp))
-            
+
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = "Sort Order",
@@ -282,7 +314,7 @@ private fun SortOrderSelector(
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
-            
+
             ExposedDropdownMenuBox(
                 expanded = expanded,
                 onExpandedChange = { expanded = !expanded }

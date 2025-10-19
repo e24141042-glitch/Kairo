@@ -16,7 +16,8 @@ data class UserPreferences(
     val defaultCategory: String = "General",
     val enableNotifications: Boolean = true,
     val reminderTime: Long = 3600000L, // 1 hour in milliseconds
-    val dailyQuoteEnabled: Boolean = true
+    val dailyQuoteEnabled: Boolean = true,
+    val googleCalendarAccount: String? = null
 ) {
     enum class SortOrder {
         DATE_CREATED,
@@ -33,7 +34,7 @@ data class UserPreferences(
 class UserPreferencesRepository(
     private val dataStore: DataStore<Preferences>
 ) {
-    
+
     private object PreferencesKeys {
         val IS_DARK_THEME = booleanPreferencesKey("is_dark_theme")
         val ACCENT_COLOR = stringPreferencesKey("accent_color")
@@ -43,8 +44,9 @@ class UserPreferencesRepository(
         val ENABLE_NOTIFICATIONS = booleanPreferencesKey("enable_notifications")
         val REMINDER_TIME = longPreferencesKey("reminder_time")
         val DAILY_QUOTE_ENABLED = booleanPreferencesKey("daily_quote_enabled")
+        val GOOGLE_CALENDAR_ACCOUNT = stringPreferencesKey("google_calendar_account")
     }
-    
+
     val userPreferences: Flow<UserPreferences> = dataStore.data
         .map { preferences ->
             UserPreferences(
@@ -61,55 +63,66 @@ class UserPreferencesRepository(
                 defaultCategory = preferences[PreferencesKeys.DEFAULT_CATEGORY] ?: "General",
                 enableNotifications = preferences[PreferencesKeys.ENABLE_NOTIFICATIONS] ?: true,
                 reminderTime = preferences[PreferencesKeys.REMINDER_TIME] ?: 3600000L,
-                dailyQuoteEnabled = preferences[PreferencesKeys.DAILY_QUOTE_ENABLED] ?: true
+                dailyQuoteEnabled = preferences[PreferencesKeys.DAILY_QUOTE_ENABLED] ?: true,
+                googleCalendarAccount = preferences[PreferencesKeys.GOOGLE_CALENDAR_ACCOUNT]
             )
         }
-    
+
     suspend fun updateDarkTheme(isDarkTheme: Boolean) {
         dataStore.edit { preferences ->
             preferences[PreferencesKeys.IS_DARK_THEME] = isDarkTheme
         }
     }
-    
+
     suspend fun updateAccentColor(color: String) {
         dataStore.edit { preferences ->
             preferences[PreferencesKeys.ACCENT_COLOR] = color
         }
     }
-    
+
     suspend fun updateShowCompletedTasks(showCompleted: Boolean) {
         dataStore.edit { preferences ->
             preferences[PreferencesKeys.SHOW_COMPLETED_TASKS] = showCompleted
         }
     }
-    
+
     suspend fun updateSortOrder(sortOrder: UserPreferences.SortOrder) {
         dataStore.edit { preferences ->
             preferences[PreferencesKeys.SORT_ORDER] = sortOrder.name
         }
     }
-    
+
     suspend fun updateDefaultCategory(category: String) {
         dataStore.edit { preferences ->
             preferences[PreferencesKeys.DEFAULT_CATEGORY] = category
         }
     }
-    
+
     suspend fun updateEnableNotifications(enable: Boolean) {
         dataStore.edit { preferences ->
             preferences[PreferencesKeys.ENABLE_NOTIFICATIONS] = enable
         }
     }
-    
+
     suspend fun updateReminderTime(timeMs: Long) {
         dataStore.edit { preferences ->
             preferences[PreferencesKeys.REMINDER_TIME] = timeMs
         }
     }
-    
+
     suspend fun updateDailyQuoteEnabled(enabled: Boolean) {
         dataStore.edit { preferences ->
             preferences[PreferencesKeys.DAILY_QUOTE_ENABLED] = enabled
+        }
+    }
+
+    suspend fun updateGoogleCalendarAccount(account: String?) {
+        dataStore.edit { preferences ->
+            if (account != null) {
+                preferences[PreferencesKeys.GOOGLE_CALENDAR_ACCOUNT] = account
+            } else {
+                preferences.remove(PreferencesKeys.GOOGLE_CALENDAR_ACCOUNT)
+            }
         }
     }
 }

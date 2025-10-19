@@ -3,6 +3,7 @@ plugins {
     id("com.android.application")
     kotlin("android")
     id("com.google.devtools.ksp")
+    id("com.google.gms.google-services")
 }
 
 android {
@@ -32,6 +33,8 @@ android {
     packagingOptions {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
+            excludes += "META-INF/INDEX.LIST"
+            excludes += "META-INF/DEPENDENCIES"
         }
     }
     java {
@@ -56,6 +59,7 @@ dependencies {
 
     // Activity Compose
     implementation("androidx.activity:activity-compose:1.9.0")
+    implementation("androidx.fragment:fragment-ktx:1.8.0")
 
     // Navigation
     implementation("androidx.navigation:navigation-compose:2.7.7")
@@ -82,6 +86,15 @@ dependencies {
     implementation("androidx.datastore:datastore-preferences:1.0.0")
 
     // No Hilt - using manual DI via AppContainer
+
+    // Google Calendar API
+    implementation("com.google.api-client:google-api-client:2.4.0")
+    implementation("com.google.api-client:google-api-client-android:2.4.0") {
+        exclude(group = "org.apache.http.legacy")
+    }
+    implementation("com.google.http-client:google-http-client-android:1.45.1")
+    implementation("com.google.apis:google-api-services-calendar:v3-rev20250404-2.0.0")
+    implementation("com.google.android.gms:play-services-auth:20.7.0")
 
     // Testing
     testImplementation("junit:junit:4.13.2")

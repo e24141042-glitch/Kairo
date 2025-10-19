@@ -9,6 +9,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.kairo.app.data.Priority
 import com.kairo.app.data.Task
 import com.kairo.app.viewmodel.CompletionFilter
 import com.kairo.app.viewmodel.FilterState
@@ -212,7 +213,7 @@ private fun FilterDialog(
                                 expandedPriority = false
                             }
                         )
-                        Task.Priority.values().forEach { priority ->
+                        Priority.values().forEach { priority ->
                             DropdownMenuItem(
                                 text = { Text(priority.displayName) },
                                 onClick = {
@@ -285,3 +286,4 @@ private fun hasActiveFilters(filterState: FilterState): Boolean {
             filterState.selectedPriority != null ||
             filterState.completionFilter != CompletionFilter.ALL
 }
+

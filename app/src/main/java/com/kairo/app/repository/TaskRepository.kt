@@ -4,7 +4,9 @@ import com.kairo.app.data.*
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
-import java.time.LocalDateTime
+import java.util.Calendar
+import java.util.Date
+import com.kairo.app.data.Priority
 
 /**
  * Repository for managing tasks and providing data access abstraction
@@ -38,7 +40,7 @@ class TaskRepository(
     /**
      * Get tasks by priority
      */
-    fun getTasksByPriority(priority: Task.Priority): Flow<List<Task>> = 
+    fun getTasksByPriority(priority: Priority): Flow<List<Task>> = 
         taskDao.getTasksByPriority(priority)
     
     /**
@@ -55,12 +57,12 @@ class TaskRepository(
     /**
      * Get overdue tasks
      */
-    fun getOverdueTasks(): Flow<List<Task>> = taskDao.getOverdueTasks()
+    fun getOverdueTasks(): Flow<List<Task>> = taskDao.getOverdueTasks(Date())
     
     /**
      * Get tasks due today
      */
-    fun getTasksDueToday(): Flow<List<Task>> = taskDao.getTasksDueToday()
+    fun getTasksDueToday(): Flow<List<Task>> = taskDao.getTasksDueToday(Date())
     
     /**
      * Get task by ID
@@ -93,8 +95,8 @@ class TaskRepository(
      */
     suspend fun insertTask(task: Task): Long {
         val taskWithTimestamp = task.copy(
-            createdAt = LocalDateTime.now(),
-            updatedAt = LocalDateTime.now()
+            createdAt = Date(),
+            completedAt = null // Ensure completedAt is null for new tasks
         )
         return taskDao.insertTask(taskWithTimestamp)
     }
@@ -103,8 +105,7 @@ class TaskRepository(
      * Update an existing task
      */
     suspend fun updateTask(task: Task) {
-        val taskWithTimestamp = task.copy(updatedAt = LocalDateTime.now())
-        taskDao.updateTask(taskWithTimestamp)
+        taskDao.updateTask(task)
     }
     
     /**
@@ -126,14 +127,14 @@ class TaskRepository(
      * Mark task as completed
      */
     suspend fun markTaskCompleted(taskId: Long) {
-        taskDao.markTaskCompleted(taskId, LocalDateTime.now().toString())
+        taskDao.markTaskCompleted(taskId, Date())
     }
     
     /**
      * Mark task as pending
      */
     suspend fun markTaskPending(taskId: Long) {
-        taskDao.markTaskPending(taskId, LocalDateTime.now().toString())
+        taskDao.markTaskPending(taskId, null)
     }
     
     /**
@@ -144,6 +145,57 @@ class TaskRepository(
             markTaskPending(task.id)
         } else {
             markTaskCompleted(task.id)
+            if (task.repeatInterval != RepeatInterval.NONE) {
+                generateNextRecurringTask(task)
+            }
+        }
+    }
+
+    /**
+     * Generates the next instance of a recurring task.
+     */
+    private suspend fun generateNextRecurringTask(completedTask: Task) {
+        if (completedTask.repeatInterval == RepeatInterval.NONE || completedTask.dueDateTime == null) {
+            return
+        }
+
+        val nextDueDateTime = calculateNextOccurrence(completedTask.dueDateTime, completedTask.repeatInterval)
+
+        if (nextDueDateTime != null && (completedTask.repeatEndDate == null || nextDueDateTime.before(completedTask.repeatEndDate) || nextDueDateTime == completedTask.repeatEndDate)) {
+            val newRecurringTask = completedTask.copy(
+                id = 0L, // New task, so id is 0
+                dueDateTime = nextDueDateTime,
+                isCompleted = false,
+                createdAt = Date(),
+                completedAt = null
+            )
+            insertTask(newRecurringTask)
+        }
+    }
+
+    /**
+     * Calculates the next occurrence date based on the current date and repeat interval.
+     */
+    private fun calculateNextOccurrence(currentDate: Date, interval: RepeatInterval): Date? {
+        val calendar = Calendar.getInstance().apply { time = currentDate }
+        return when (interval) {
+            RepeatInterval.DAILY -> {
+                calendar.add(Calendar.DAY_OF_YEAR, 1)
+                calendar.time
+            }
+            RepeatInterval.WEEKLY -> {
+                calendar.add(Calendar.WEEK_OF_YEAR, 1)
+                calendar.time
+            }
+            RepeatInterval.MONTHLY -> {
+                calendar.add(Calendar.MONTH, 1)
+                calendar.time
+            }
+            RepeatInterval.YEARLY -> {
+                calendar.add(Calendar.YEAR, 1)
+                calendar.time
+            }
+            RepeatInterval.NONE -> null
         }
     }
     
@@ -166,7 +218,7 @@ class TaskRepository(
             UserPreferences.SortOrder.DATE_CREATED -> 
                 filteredTasks.sortedByDescending { it.createdAt }
             UserPreferences.SortOrder.DATE_DUE -> 
-                filteredTasks.sortedWith(compareBy<Task> { it.dueDate == null }.thenBy { it.dueDate })
+                filteredTasks.sortedWith(compareBy<Task> { it.dueDateTime == null }.thenBy { it.dueDateTime })
             UserPreferences.SortOrder.PRIORITY -> 
                 filteredTasks.sortedByDescending { it.priority.ordinal }
             UserPreferences.SortOrder.TITLE -> 

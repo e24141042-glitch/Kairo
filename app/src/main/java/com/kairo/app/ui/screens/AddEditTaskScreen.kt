@@ -11,6 +11,7 @@ import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Category
 import androidx.compose.material.icons.filled.PriorityHigh
+import androidx.compose.material.icons.filled.Repeat
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -38,12 +39,12 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.kairo.app.data.Task
 import com.kairo.app.viewmodel.AddEditTaskViewModel
-import java.time.Instant
-import java.time.LocalDate
-import java.time.LocalDateTime
-import java.time.LocalTime
-import java.time.ZoneId
-import java.time.format.DateTimeFormatter
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Date
+import java.util.Locale
+import com.kairo.app.data.RepeatInterval
+import com.kairo.app.data.Priority
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -71,10 +72,15 @@ fun AddEditTaskScreen(
     val currentTask = uiState.task ?: Task(
         title = "",
         description = "",
-        priority = Task.Priority.MEDIUM,
-        category = "General",
-        createdAt = LocalDateTime.now(),
-        updatedAt = LocalDateTime.now()
+        dueDateTime = null,
+        priority = Priority.MEDIUM,
+        isCompleted = false,
+        createdAt = Date(),
+        completedAt = null,
+        isSynced = false,
+        googleCalendarEventId = null,
+        repeatInterval = RepeatInterval.NONE,
+        repeatEndDate = null
     )
     
     Scaffold(
@@ -152,11 +158,25 @@ fun AddEditTaskScreen(
                 onCategoryChange = viewModel::updateCategory
             )
             
-            // Due Date Selection
-            DueDateSelector(
-                dueDate = currentTask.dueDate,
-                onDueDateChange = viewModel::updateDueDate
+            // Due Date and Time Selection
+            DueDateTimeSelector(
+                dueDateTime = uiState.dueDateTime,
+                onDueDateTimeChange = viewModel::updateDueDateTime
             )
+
+            // Repeat Interval Selection
+            RepeatIntervalSelector(
+                selectedRepeatInterval = uiState.repeatInterval,
+                onRepeatIntervalSelected = viewModel::updateRepeatInterval
+            )
+
+            // Repeat End Date Selection (only if repeat interval is not NONE)
+            if (uiState.repeatInterval != RepeatInterval.NONE) {
+                RepeatEndDateSelector(
+                    repeatEndDate = uiState.repeatEndDate,
+                    onRepeatEndDateChange = viewModel::updateRepeatEndDate
+                )
+            }
             
             // Error Message
             uiState.errorMessage?.let { errorMessage ->
@@ -178,8 +198,8 @@ fun AddEditTaskScreen(
 
 @Composable
 private fun PrioritySelector(
-    selectedPriority: Task.Priority,
-    onPrioritySelected: (Task.Priority) -> Unit,
+    selectedPriority: Priority,
+    onPrioritySelected: (Priority) -> Unit,
     modifier: Modifier = Modifier
 ) {
     Column(modifier = modifier) {
@@ -205,7 +225,7 @@ private fun PrioritySelector(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            Task.Priority.values().forEach { priority ->
+            Priority.values().forEach { priority ->
                 FilterChip(
                     onClick = { onPrioritySelected(priority) },
                     label = { Text(priority.displayName) },
@@ -255,20 +275,15 @@ private fun CategoryInput(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun DueDateSelector(
-    dueDate: LocalDateTime?,
-    onDueDateChange: (LocalDateTime?) -> Unit,
+private fun DueDateTimeSelector(
+    dueDateTime: Date?,
+    onDueDateTimeChange: (Date?) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val formatter = remember {
-        DateTimeFormatter.ofPattern("MMM dd, yyyy HH:mm")
-    }
-    val initialDateTime = remember(dueDate) {
-        (dueDate ?: LocalDateTime.now()).withSecond(0).withNano(0)
-    }
+    val dateTimeFormatter = remember { SimpleDateFormat("MMM dd, yyyy HH:mm", Locale.getDefault()) }
     var showDatePicker by remember { mutableStateOf(false) }
     var showTimePicker by remember { mutableStateOf(false) }
-    var pendingDate by remember { mutableStateOf<LocalDate?>(null) }
+    var selectedDateMillis: Long? by remember { mutableStateOf(null) }
 
     Column(modifier = modifier) {
         Row(
@@ -276,12 +291,12 @@ private fun DueDateSelector(
         ) {
             Icon(
                 imageVector = Icons.Default.CalendarToday,
-                contentDescription = "Due Date",
+                contentDescription = "Due Date and Time",
                 modifier = Modifier.size(20.dp)
             )
             Spacer(modifier = Modifier.width(8.dp))
             Text(
-                text = "Due Date",
+                text = "Due Date and Time",
                 style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.Medium
             )
@@ -290,9 +305,9 @@ private fun DueDateSelector(
         Spacer(modifier = Modifier.height(8.dp))
 
         OutlinedTextField(
-            value = dueDate?.format(formatter) ?: "",
+            value = dueDateTime?.let { dateTimeFormatter.format(it) } ?: "",
             onValueChange = { },
-            label = { Text("Due Date") },
+            label = { Text("Due Date and Time") },
             placeholder = { Text("Optional") },
             modifier = Modifier
                 .fillMaxWidth()
@@ -300,11 +315,186 @@ private fun DueDateSelector(
             readOnly = true,
             trailingIcon = {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    if (dueDate != null) {
-                        IconButton(onClick = { onDueDateChange(null) }) {
+                    if (dueDateTime != null) {
+                        IconButton(onClick = { onDueDateTimeChange(null) }) {
                             Icon(
                                 imageVector = Icons.Default.Clear,
-                                contentDescription = "Clear Due Date"
+                                contentDescription = "Clear Due Date and Time"
+                            )
+                        }
+                    }
+                    IconButton(onClick = { showDatePicker = true }) {
+                        Icon(
+                            imageVector = Icons.Default.CalendarToday,
+                            contentDescription = "Select Date and Time"
+                        )
+                    }
+                }
+            }
+        )
+    }
+
+    if (showDatePicker) {
+        val datePickerState = rememberDatePickerState(
+            initialSelectedDateMillis = dueDateTime?.time ?: Calendar.getInstance().timeInMillis
+        )
+        DatePickerDialog(
+            onDismissRequest = {
+                showDatePicker = false
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        selectedDateMillis = datePickerState.selectedDateMillis
+                        showDatePicker = false
+                        showTimePicker = true
+                    }
+                ) {
+                    Text("Next")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = {
+                    showDatePicker = false
+                }) {
+                    Text("Cancel")
+                }
+            }
+        ) {
+            DatePicker(state = datePickerState)
+        }
+    }
+
+    if (showTimePicker) {
+        val calendar = Calendar.getInstance().apply {
+            if (selectedDateMillis != null) {
+                timeInMillis = selectedDateMillis!!
+            } else if (dueDateTime != null) {
+                time = dueDateTime
+            }
+        }
+        val timePickerState = rememberTimePickerState(
+            initialHour = calendar.get(Calendar.HOUR_OF_DAY),
+            initialMinute = calendar.get(Calendar.MINUTE),
+            is24Hour = true
+        )
+        AlertDialog(
+            onDismissRequest = {
+                showTimePicker = false
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    calendar.set(Calendar.HOUR_OF_DAY, timePickerState.hour)
+                    calendar.set(Calendar.MINUTE, timePickerState.minute)
+                    onDueDateTimeChange(calendar.time)
+                    showTimePicker = false
+                }) {
+                    Text("Save")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = {
+                    showTimePicker = false
+                }) {
+                    Text("Cancel")
+                }
+            },
+            text = {
+                TimePicker(state = timePickerState)
+            },
+            title = {
+                Text("Select time")
+            }
+        )
+    }
+}
+
+@Composable
+private fun RepeatIntervalSelector(
+    selectedRepeatInterval: RepeatInterval,
+    onRepeatIntervalSelected: (RepeatInterval) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Column(modifier = modifier) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                imageVector = Icons.Default.Repeat,
+                contentDescription = "Repeat Interval",
+                modifier = Modifier.size(20.dp)
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(
+                text = "Repeat",
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.Medium
+            )
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            RepeatInterval.values().forEach { interval ->
+                FilterChip(
+                    onClick = { onRepeatIntervalSelected(interval) },
+                    label = { Text(interval.name.lowercase().capitalize(Locale.getDefault())) },
+                    selected = selectedRepeatInterval == interval,
+                    modifier = Modifier.weight(1f)
+                )
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun RepeatEndDateSelector(
+    repeatEndDate: Date?,
+    onRepeatEndDateChange: (Date?) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val dateFormatter = remember { SimpleDateFormat("MMM dd, yyyy", Locale.getDefault()) }
+    var showDatePicker by remember { mutableStateOf(false) }
+
+    Column(modifier = modifier) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                imageVector = Icons.Default.CalendarToday,
+                contentDescription = "Repeat End Date",
+                modifier = Modifier.size(20.dp)
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(
+                text = "Repeat End Date",
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.Medium
+            )
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        OutlinedTextField(
+            value = repeatEndDate?.let { dateFormatter.format(it) } ?: "",
+            onValueChange = { },
+            label = { Text("Repeat End Date") },
+            placeholder = { Text("Optional") },
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable { showDatePicker = true },
+            readOnly = true,
+            trailingIcon = {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    if (repeatEndDate != null) {
+                        IconButton(onClick = { onRepeatEndDateChange(null) }) {
+                            Icon(
+                                imageVector = Icons.Default.Clear,
+                                contentDescription = "Clear Repeat End Date"
                             )
                         }
                     }
@@ -321,37 +511,30 @@ private fun DueDateSelector(
 
     if (showDatePicker) {
         val datePickerState = rememberDatePickerState(
-            initialSelectedDateMillis = initialDateTime.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
+            initialSelectedDateMillis = repeatEndDate?.time ?: Calendar.getInstance().timeInMillis
         )
         DatePickerDialog(
             onDismissRequest = {
                 showDatePicker = false
-                pendingDate = null
             },
             confirmButton = {
                 TextButton(
                     onClick = {
                         val millis = datePickerState.selectedDateMillis
                         if (millis != null) {
-                            val selectedDate = Instant.ofEpochMilli(millis)
-                                .atZone(ZoneId.systemDefault())
-                                .toLocalDate()
-                            pendingDate = selectedDate
-                            showDatePicker = false
-                            showTimePicker = true
+                            onRepeatEndDateChange(Date(millis))
                         } else {
-                            showDatePicker = false
-                            pendingDate = null
+                            onRepeatEndDateChange(null)
                         }
+                        showDatePicker = false
                     }
                 ) {
-                    Text("Next")
+                    Text("OK")
                 }
             },
             dismissButton = {
                 TextButton(onClick = {
                     showDatePicker = false
-                    pendingDate = null
                 }) {
                     Text("Cancel")
                 }
@@ -359,47 +542,5 @@ private fun DueDateSelector(
         ) {
             DatePicker(state = datePickerState)
         }
-    }
-
-    if (showTimePicker) {
-        val targetDate = pendingDate ?: initialDateTime.toLocalDate()
-        val timePickerState = rememberTimePickerState(
-            initialHour = initialDateTime.hour,
-            initialMinute = initialDateTime.minute,
-            is24Hour = true
-        )
-        AlertDialog(
-            onDismissRequest = {
-                showTimePicker = false
-                pendingDate = null
-            },
-            confirmButton = {
-                TextButton(onClick = {
-                    val selectedDateTime = LocalDateTime.of(
-                        targetDate,
-                        LocalTime.of(timePickerState.hour, timePickerState.minute)
-                    ).withSecond(0).withNano(0)
-                    onDueDateChange(selectedDateTime)
-                    showTimePicker = false
-                    pendingDate = null
-                }) {
-                    Text("Save")
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = {
-                    showTimePicker = false
-                    pendingDate = null
-                }) {
-                    Text("Cancel")
-                }
-            },
-            text = {
-                TimePicker(state = timePickerState)
-            },
-            title = {
-                Text("Select time")
-            }
-        )
     }
 }

@@ -1,33 +1,41 @@
 package com.kairo.app.data
 
 import androidx.room.TypeConverter
-import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
+import java.util.Date
+import com.kairo.app.data.Priority
 
 /**
- * Type converters for Room database to handle LocalDateTime
+ * Type converters for Room database to handle Date, and RepeatInterval
  */
 class Converters {
     
-    private val formatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME
-    
     @TypeConverter
-    fun fromLocalDateTime(value: LocalDateTime?): String? {
-        return value?.format(formatter)
-    }
-    
-    @TypeConverter
-    fun toLocalDateTime(value: String?): LocalDateTime? {
-        return value?.let { LocalDateTime.parse(it, formatter) }
-    }
-    
-    @TypeConverter
-    fun fromPriority(priority: Task.Priority): String {
+    fun fromPriority(priority: Priority): String {
         return priority.name
     }
     
     @TypeConverter
-    fun toPriority(priority: String): Task.Priority {
-        return Task.Priority.valueOf(priority)
+    fun toPriority(priority: String): Priority {
+        return Priority.valueOf(priority)
+    }
+
+    @TypeConverter
+    fun fromRepeatInterval(repeatInterval: RepeatInterval): String {
+        return repeatInterval.name
+    }
+
+    @TypeConverter
+    fun toRepeatInterval(repeatInterval: String): RepeatInterval {
+        return RepeatInterval.valueOf(repeatInterval)
+    }
+
+    @TypeConverter
+    fun fromTimestamp(value: Long?): Date? {
+        return value?.let { Date(it) }
+    }
+
+    @TypeConverter
+    fun dateToTimestamp(date: Date?): Long? {
+        return date?.time
     }
 }

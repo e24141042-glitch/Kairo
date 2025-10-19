@@ -10,6 +10,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Circle
 import androidx.compose.material.icons.filled.Schedule
+import androidx.compose.material.icons.filled.Repeat
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -21,7 +22,10 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.kairo.app.data.Task
-import java.time.format.DateTimeFormatter
+import java.text.SimpleDateFormat
+import java.util.Locale
+import com.kairo.app.data.RepeatInterval
+import com.kairo.app.data.Priority
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -32,10 +36,10 @@ fun TaskCard(
     modifier: Modifier = Modifier
 ) {
     val priorityColor = when (task.priority) {
-        Task.Priority.LOW -> com.kairo.app.ui.theme.PriorityLow
-        Task.Priority.MEDIUM -> com.kairo.app.ui.theme.PriorityMedium
-        Task.Priority.HIGH -> com.kairo.app.ui.theme.PriorityHigh
-        Task.Priority.URGENT -> com.kairo.app.ui.theme.PriorityUrgent
+        Priority.LOW -> com.kairo.app.ui.theme.PriorityLow
+        Priority.MEDIUM -> com.kairo.app.ui.theme.PriorityMedium
+        Priority.HIGH -> com.kairo.app.ui.theme.PriorityHigh
+        Priority.URGENT -> com.kairo.app.ui.theme.PriorityUrgent
     }
     
     val animatedProgress = animateFloatAsState(
@@ -43,6 +47,8 @@ fun TaskCard(
         animationSpec = tween(durationMillis = 300),
         label = "completion_animation"
     )
+
+    val dateFormatter = remember { SimpleDateFormat("MMM dd, yyyy", Locale.getDefault()) }
     
     Card(
         modifier = modifier
@@ -136,7 +142,7 @@ fun TaskCard(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Category and due date
+                // Category, due date, and repeat info
                 Column {
                     if (task.category.isNotBlank() && task.category != "General") {
                         Surface(
@@ -152,14 +158,14 @@ fun TaskCard(
                         }
                     }
                     
-                    if (task.dueDate != null) {
+                    if (task.dueDateTime != null) {
                         Spacer(modifier = Modifier.height(4.dp))
                         Row(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Schedule,
-                                contentDescription = "Due date",
+                                contentDescription = "Due date and time",
                                 modifier = Modifier.size(14.dp),
                                 tint = if (task.isOverdue) {
                                     MaterialTheme.colorScheme.error
@@ -169,13 +175,34 @@ fun TaskCard(
                             )
                             Spacer(modifier = Modifier.width(4.dp))
                             Text(
-                                text = task.formattedDueDate ?: "",
+                                text = task.formattedDueDateTime ?: "",
                                 style = MaterialTheme.typography.labelSmall,
                                 color = if (task.isOverdue) {
                                     MaterialTheme.colorScheme.error
                                 } else {
                                     MaterialTheme.colorScheme.onSurfaceVariant
                                 }
+                            )
+                        }
+                    }
+
+                    if (task.repeatInterval != RepeatInterval.NONE) {
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Repeat,
+                                contentDescription = "Repeat Interval",
+                                modifier = Modifier.size(14.dp),
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(
+                                text = "Repeats ${task.repeatInterval.name.lowercase()}" +
+                                        (task.repeatEndDate?.let { " until ${dateFormatter.format(it)}" } ?: ""),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
                     }
@@ -198,3 +225,4 @@ fun TaskCard(
         }
     }
 }
+

@@ -8,6 +8,7 @@ import androidx.room.Room
 import com.kairo.app.data.TaskDatabase
 import com.kairo.app.data.UserPreferencesRepository
 import com.kairo.app.repository.TaskRepository
+import com.kairo.app.data.google_calendar.GoogleCalendarService
 
 /**
  * Lightweight app container for manual dependency provisioning (no Hilt runtime requirement).
@@ -25,6 +26,9 @@ object AppContainer {
     lateinit var taskRepository: TaskRepository
         private set
 
+    lateinit var googleCalendarService: GoogleCalendarService
+        private set
+
     private val Context.ds by preferencesDataStore(name = "user_preferences")
 
     fun init(context: Context) {
@@ -39,6 +43,7 @@ object AppContainer {
 
         userPreferencesRepository = UserPreferencesRepository(dataStore)
         taskRepository = TaskRepository(database.taskDao(), userPreferencesRepository)
+        googleCalendarService = GoogleCalendarService(applicationContext, taskRepository)
 
         initialized = true
     }

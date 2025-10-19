@@ -9,6 +9,7 @@ import com.kairo.app.repository.TaskStatistics
 import com.kairo.app.di.AppContainer
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import com.kairo.app.data.Priority
  
 
 /**
@@ -209,7 +210,7 @@ data class TaskUiState(
  */
 data class FilterState(
     val selectedCategory: String = "All",
-    val selectedPriority: Task.Priority? = null,
+    val selectedPriority: Priority? = null,
     val completionFilter: CompletionFilter = CompletionFilter.ALL
 )
 
