@@ -1,9 +1,18 @@
 package com.kairo.app.ui.screens
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
@@ -12,25 +21,16 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import kotlinx.coroutines.launch
 import com.kairo.app.ui.components.*
 import com.kairo.app.viewmodel.TaskViewModel
 import com.kairo.app.viewmodel.SettingsViewModel
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
-import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.runtime.remember
-import androidx.compose.ui.unit.dp
 
 
 
@@ -111,7 +111,7 @@ fun HomeScreen(
             if (userPreferences.dailyQuoteEnabled) {
                 item {
                     AnimatedVisibility(
-                        visible = true, // You can change this to a state to control visibility
+                        visible = true,
                         enter = fadeIn(animationSpec = tween(durationMillis = 500, delayMillis = 200)) + slideInVertically(initialOffsetY = { -40 }),
                         exit = fadeOut(animationSpec = tween(durationMillis = 500)) + slideOutVertically(targetOffsetY = { -40 })
                     ) {
@@ -172,15 +172,54 @@ fun HomeScreen(
                     items = uiState.tasks,
                     key = { it.id }
                 ) { task ->
+                    val dismissState = rememberSwipeToDismissBoxState(
+                        confirmValueChange = { value ->
+                            if (value == SwipeToDismissBoxValue.EndToStart) {
+                                taskViewModel.deleteTask(task)
+                                true
+                            } else {
+                                false
+                            }
+                        }
+                    )
+
                     AnimatedVisibility(
-                        visible = true, // You can change this to a state to control visibility
+                        visible = true,
                         enter = fadeIn(animationSpec = tween(durationMillis = 500)) + slideInVertically(initialOffsetY = { -40 }),
                         exit = fadeOut(animationSpec = tween(durationMillis = 500)) + slideOutVertically(targetOffsetY = { -40 })
                     ) {
-                        TaskCard(
-                            task = task,
-                            onTaskClick = { onNavigateToEditTask(task.id) },
-                            onToggleCompletion = taskViewModel::toggleTaskCompletion
+                        SwipeToDismissBox(
+                            state = dismissState,
+                            modifier = Modifier.animateItemPlacement(),
+                            backgroundContent = {
+                                val color = when (dismissState.dismissDirection) {
+                                    SwipeToDismissBoxValue.EndToStart -> MaterialTheme.colorScheme.errorContainer
+                                    else -> Color.Transparent
+                                }
+                                
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .background(color)
+                                        .padding(horizontal = 20.dp),
+                                    contentAlignment = Alignment.CenterEnd
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Delete,
+                                        contentDescription = "Delete",
+                                        tint = MaterialTheme.colorScheme.onErrorContainer,
+                                        modifier = Modifier.size(24.dp)
+                                    )
+                                }
+                            },
+                            content = {
+                                TaskCard(
+                                    task = task,
+                                    onTaskClick = { onNavigateToEditTask(task.id) },
+                                    onToggleCompletion = taskViewModel::toggleTaskCompletion,
+                                    modifier = Modifier.animateItemPlacement()
+                                )
+                            }
                         )
                     }
                 }
