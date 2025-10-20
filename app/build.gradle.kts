@@ -14,8 +14,8 @@ android {
         applicationId = "com.kairo.app"
         minSdk = 26
         targetSdk = 34
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = 220
+        versionName = "2.2.0"
     }
 
     buildFeatures {
