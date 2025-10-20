@@ -44,7 +44,7 @@ class GoogleCalendarService(
         val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
             .requestEmail()
             .requestScopes(Scope(CalendarScopes.CALENDAR))
-            .requestServerAuthCode("YOUR_WEB_CLIENT_ID_HERE") // <--- ADD THIS LINE (REPLACE WITH ACTUAL WEB CLIENT ID)
+            .requestServerAuthCode("719369528057-so89e932hs9phvj6apv6htcpkli4h745.apps.googleusercontent.com")
             .build()
         GoogleSignIn.getClient(context, gso)
     }

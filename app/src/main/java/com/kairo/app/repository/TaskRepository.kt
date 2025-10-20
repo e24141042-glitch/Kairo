@@ -141,12 +141,40 @@ class TaskRepository(
      * Toggle task completion status
      */
     suspend fun toggleTaskCompletion(task: Task) {
+        android.util.Log.d("TaskRepository", "toggleTaskCompletion called for task: ${task.id}, isCompleted: ${task.isCompleted}, repeatInterval: ${task.repeatInterval}")
+        
         if (task.isCompleted) {
+            android.util.Log.d("TaskRepository", "Marking task ${task.id} as pending")
             markTaskPending(task.id)
         } else {
+            android.util.Log.d("TaskRepository", "Marking task ${task.id} as completed")
+            
+            // First, save the repeat settings before marking as completed
+            val repeatInterval = task.repeatInterval
+            val repeatEndDate = task.repeatEndDate
+            
+            // Mark the task as completed
             markTaskCompleted(task.id)
-            if (task.repeatInterval != RepeatInterval.NONE) {
-                generateNextRecurringTask(task)
+            
+            // Get the updated task with the latest state
+            val updatedTask = taskDao.getTaskById(task.id)
+            android.util.Log.d("TaskRepository", "Updated task after completion - ID: ${updatedTask?.id}, Repeat: ${updatedTask?.repeatInterval}")
+            
+            // If this is a recurring task, generate the next occurrence
+            if (repeatInterval != RepeatInterval.NONE) {
+                android.util.Log.d("TaskRepository", "Task ${task.id} is recurring ($repeatInterval), generating next occurrence")
+                
+                // Create a copy of the task with the original repeat settings
+                val taskWithRepeat = task.copy(
+                    repeatInterval = repeatInterval,
+                    repeatEndDate = repeatEndDate,
+                    isCompleted = false
+                )
+                
+                // Generate the next occurrence
+                generateNextRecurringTask(taskWithRepeat)
+            } else {
+                android.util.Log.d("TaskRepository", "Task ${task.id} is not set to repeat")
             }
         }
     }
@@ -155,21 +183,59 @@ class TaskRepository(
      * Generates the next instance of a recurring task.
      */
     private suspend fun generateNextRecurringTask(completedTask: Task) {
-        if (completedTask.repeatInterval == RepeatInterval.NONE || completedTask.dueDateTime == null) {
+        android.util.Log.d("TaskRepository", "generateNextRecurringTask called for task: ${completedTask.id}")
+        android.util.Log.d("TaskRepository", "Task details - ID: ${completedTask.id}, Title: ${completedTask.title}, Repeat: ${completedTask.repeatInterval}, Due: ${completedTask.dueDateTime}, End: ${completedTask.repeatEndDate}")
+        
+        if (completedTask.repeatInterval == RepeatInterval.NONE) {
+            android.util.Log.d("TaskRepository", "No repeat interval set, skipping")
+            return
+        }
+        
+        if (completedTask.dueDateTime == null) {
+            android.util.Log.d("TaskRepository", "No due date set, skipping")
             return
         }
 
         val nextDueDateTime = calculateNextOccurrence(completedTask.dueDateTime, completedTask.repeatInterval)
+        android.util.Log.d("TaskRepository", "Next due date calculated: $nextDueDateTime (from ${completedTask.dueDateTime} with interval ${completedTask.repeatInterval})")
 
-        if (nextDueDateTime != null && (completedTask.repeatEndDate == null || nextDueDateTime.before(completedTask.repeatEndDate) || nextDueDateTime == completedTask.repeatEndDate)) {
-            val newRecurringTask = completedTask.copy(
-                id = 0L, // New task, so id is 0
-                dueDateTime = nextDueDateTime,
-                isCompleted = false,
-                createdAt = Date(),
-                completedAt = null
-            )
-            insertTask(newRecurringTask)
+        if (nextDueDateTime == null) {
+            android.util.Log.d("TaskRepository", "Could not calculate next due date")
+            return
+        }
+
+        val isBeforeEndDate = completedTask.repeatEndDate == null || 
+                             nextDueDateTime.before(completedTask.repeatEndDate) || 
+                             nextDueDateTime == completedTask.repeatEndDate
+        
+        if (!isBeforeEndDate) {
+            android.util.Log.d("TaskRepository", "Next due date $nextDueDateTime is after repeat end date ${completedTask.repeatEndDate}")
+            return
+        }
+
+        // Create a new task with the next due date
+        val newRecurringTask = completedTask.copy(
+            id = 0L, // New task, so id is 0
+            dueDateTime = nextDueDateTime,
+            isCompleted = false,
+            createdAt = Date(),
+            completedAt = null,
+            // Explicitly set repeat settings in case they were lost
+            repeatInterval = completedTask.repeatInterval,
+            repeatEndDate = completedTask.repeatEndDate
+        )
+        
+        android.util.Log.d("TaskRepository", "Creating new recurring task: $newRecurringTask")
+        
+        try {
+            val newTaskId = insertTask(newRecurringTask)
+            android.util.Log.d("TaskRepository", "New recurring task created with ID: $newTaskId")
+            
+            // Verify the task was created
+            val createdTask = taskDao.getTaskById(newTaskId)
+            android.util.Log.d("TaskRepository", "Verified created task - ID: ${createdTask?.id}, Title: ${createdTask?.title}, Repeat: ${createdTask?.repeatInterval}, Due: ${createdTask?.dueDateTime}")
+        } catch (e: Exception) {
+            android.util.Log.e("TaskRepository", "Error creating new recurring task", e)
         }
     }
 

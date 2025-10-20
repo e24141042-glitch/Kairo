@@ -80,7 +80,10 @@ fun TaskCard(
                 
                 // Completion checkbox
                 IconButton(
-                    onClick = { onToggleCompletion(task) },
+                    onClick = { 
+                        android.util.Log.d("TaskCard", "Toggle completion clicked for task: ${task.id}, current state: ${task.isCompleted}")
+                        onToggleCompletion(task) 
+                    },
                     modifier = Modifier.size(24.dp)
                 ) {
                     if (task.isCompleted) {

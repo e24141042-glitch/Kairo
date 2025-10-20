@@ -185,8 +185,8 @@ fun HomeScreen(
 
                     AnimatedVisibility(
                         visible = true,
-                        enter = fadeIn(animationSpec = tween(durationMillis = 500)) + slideInVertically(initialOffsetY = { -40 }),
-                        exit = fadeOut(animationSpec = tween(durationMillis = 500)) + slideOutVertically(targetOffsetY = { -40 })
+                        enter = fadeIn(animationSpec = tween(durationMillis = 300)) + slideInVertically(initialOffsetY = { -20 }),
+                        exit = fadeOut(animationSpec = tween(durationMillis = 300)) + slideOutVertically(targetOffsetY = { -20 })
                     ) {
                         SwipeToDismissBox(
                             state = dismissState,
@@ -200,27 +200,50 @@ fun HomeScreen(
                                 Box(
                                     modifier = Modifier
                                         .fillMaxSize()
-                                        .background(color)
-                                        .padding(horizontal = 20.dp),
-                                    contentAlignment = Alignment.CenterEnd
+                                        .background(
+                                            color = color,
+                                            shape = MaterialTheme.shapes.medium
+                                        )
+                                        .padding(horizontal = 16.dp, vertical = 8.dp)
                                 ) {
-                                    Icon(
-                                        imageVector = Icons.Default.Delete,
-                                        contentDescription = "Delete",
-                                        tint = MaterialTheme.colorScheme.onErrorContainer,
-                                        modifier = Modifier.size(24.dp)
-                                    )
+                                    if (dismissState.dismissDirection == SwipeToDismissBoxValue.EndToStart) {
+                                        Row(
+                                            modifier = Modifier
+                                                .fillMaxSize()
+                                                .align(Alignment.CenterEnd),
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.End
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Default.Delete,
+                                                contentDescription = "Delete",
+                                                tint = MaterialTheme.colorScheme.onErrorContainer,
+                                                modifier = Modifier.size(24.dp)
+                                            )
+                                            Spacer(modifier = Modifier.width(8.dp))
+                                            Text(
+                                                text = "Delete",
+                                                color = MaterialTheme.colorScheme.onErrorContainer,
+                                                style = MaterialTheme.typography.titleMedium,
+                                                fontWeight = FontWeight.Medium
+                                            )
+                                        }
+                                    }
                                 }
-                            },
-                            content = {
-                                TaskCard(
-                                    task = task,
-                                    onTaskClick = { onNavigateToEditTask(task.id) },
-                                    onToggleCompletion = taskViewModel::toggleTaskCompletion,
-                                    modifier = Modifier.animateItemPlacement()
-                                )
                             }
-                        )
+                        ) {
+                            // Task Card Content
+                            TaskCard(
+                                task = task,
+                                onTaskClick = { onNavigateToEditTask(task.id) },
+                                onToggleCompletion = { task ->
+                                    taskViewModel.toggleTaskCompletion(task)
+                                },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 4.dp)
+                            )
+                        }
                     }
                 }
             }
