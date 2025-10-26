@@ -12,6 +12,7 @@ import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Category
 import androidx.compose.material.icons.filled.PriorityHigh
 import androidx.compose.material.icons.filled.Repeat
+import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -45,6 +46,9 @@ import java.util.Date
 import java.util.Locale
 import com.kairo.app.data.RepeatInterval
 import com.kairo.app.data.Priority
+import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.AnnotatedString
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -177,7 +181,13 @@ fun AddEditTaskScreen(
                     onRepeatEndDateChange = viewModel::updateRepeatEndDate
                 )
             }
-            
+
+            // Google Calendar Event ID (if available)
+            val eventId = currentTask.googleCalendarEventId
+            if (eventId != null) {
+                GoogleCalendarEventIdRow(eventId = eventId)
+            }
+
             // Error Message
             uiState.errorMessage?.let { errorMessage ->
                 Card(
@@ -542,5 +552,53 @@ private fun RepeatEndDateSelector(
         ) {
             DatePicker(state = datePickerState)
         }
+    }
+}
+
+@Composable
+private fun GoogleCalendarEventIdRow(
+    eventId: String,
+    modifier: Modifier = Modifier
+) {
+    val clipboardManager = LocalClipboardManager.current
+    val context = LocalContext.current
+
+    Column(modifier = modifier) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                imageVector = Icons.Default.CalendarToday,
+                contentDescription = "Google Calendar Event ID",
+                modifier = Modifier.size(20.dp)
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(
+                text = "Google Calendar Event ID",
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.Medium
+            )
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        OutlinedTextField(
+            value = eventId,
+            onValueChange = { },
+            label = { Text("Event ID") },
+            modifier = Modifier.fillMaxWidth(),
+            readOnly = true,
+            trailingIcon = {
+                IconButton(onClick = {
+                    clipboardManager.setText(AnnotatedString(eventId))
+                    android.widget.Toast.makeText(context, "Copied to clipboard", android.widget.Toast.LENGTH_SHORT).show()
+                }) {
+                    Icon(
+                        imageVector = Icons.Default.ContentCopy,
+                        contentDescription = "Copy Event ID"
+                    )
+                }
+            }
+        )
     }
 }

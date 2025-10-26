@@ -15,6 +15,11 @@ import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Error
 import androidx.compose.material.icons.filled.Schedule
+import androidx.compose.material.icons.filled.ContentCopy
+import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -162,6 +167,9 @@ fun SettingsScreen(
                         errorMessage = userPreferences.syncErrorMessage,
                         onManualSync = { viewModel.triggerManualSync() }
                     )
+
+                    Spacer(modifier = Modifier.height(12.dp))
+                    CalendarIdDisplay(calendarId = userPreferences.googleCalendarId)
                 }
             }
 
@@ -533,5 +541,66 @@ private fun getSortOrderDescription(sortOrder: UserPreferences.SortOrder): Strin
         UserPreferences.SortOrder.PRIORITY -> "High priority first"
         UserPreferences.SortOrder.TITLE -> "Alphabetical order"
         UserPreferences.SortOrder.CATEGORY -> "Group by category"
+    }
+}
+
+@Composable
+private fun CalendarIdDisplay(
+    calendarId: String?,
+    modifier: Modifier = Modifier
+) {
+    val clipboardManager = LocalClipboardManager.current
+    val context = LocalContext.current
+
+    Column(modifier = modifier) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                imageVector = Icons.Default.CalendarMonth,
+                contentDescription = "Kairo Calendar ID",
+                modifier = Modifier.size(24.dp),
+                tint = MaterialTheme.colorScheme.primary
+            )
+
+            Spacer(modifier = Modifier.width(16.dp))
+
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = "Kairo Calendar ID",
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = FontWeight.Medium
+                )
+                Text(
+                    text = if (calendarId != null) "Visible and copyable" else "Not available yet",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        OutlinedTextField(
+            value = calendarId ?: "",
+            onValueChange = { },
+            label = { Text("Calendar ID") },
+            placeholder = { Text("Not available yet") },
+            modifier = Modifier.fillMaxWidth(),
+            readOnly = true,
+            trailingIcon = {
+                IconButton(onClick = {
+                    if (!calendarId.isNullOrBlank()) {
+                        clipboardManager.setText(AnnotatedString(calendarId))
+                        android.widget.Toast.makeText(context, "Copied to clipboard", android.widget.Toast.LENGTH_SHORT).show()
+                    }
+                }, enabled = !calendarId.isNullOrBlank()) {
+                    Icon(
+                        imageVector = Icons.Default.ContentCopy,
+                        contentDescription = "Copy Calendar ID"
+                    )
+                }
+            }
+        )
     }
 }

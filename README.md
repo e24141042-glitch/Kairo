@@ -1,134 +1,58 @@
-# Kairo - Modern Task Management App
+# Kairo — Modern Task Management (Android)
 
-![Kairo Banner](app/src/main/ic_launcher-playstore.png) <!-- Add your banner image if available -->
+Kairo is a modern, Material 3 Android app for planning, tracking, and completing tasks. It uses a clean MVVM architecture with Jetpack Compose, Room, Hilt, Coroutines, and DataStore.
 
-Kairo (from the Greek word for "time") is an elegant and intuitive task management application designed to help you stay organized and productive. Built with modern Android development practices, Kairo combines a beautiful Material 3 design with powerful features to manage your daily tasks efficiently.
+## Features
+- Task management with title, description, priority, category, due date, and repeat
+- Swipe to delete, mark complete, sort and filter
+- Safe, consistent confirmation dialogs for deletions:
+  - Delete single task (incl. swipe)
+  - Clear completed tasks (Home, Settings)
+  - Delete all tasks (Settings)
+- Google Calendar sync:
+  - Connect/disconnect in `Settings → Integrations → Google Calendar`
+  - Automatically creates a dedicated "Kairo" calendar and stores its ID
+  - Shows Kairo Calendar ID in Settings with a copy-to-clipboard button
+  - Shows each task’s Google Calendar Event ID on the Add/Edit Task screen with copy-to-clipboard
+  - Handles duplicate creation, stale event IDs, and ensures unique sync enqueuing
 
-## ✨ Features
+## Tech Stack
+- Kotlin, Jetpack Compose (Material 3)
+- MVVM, Hilt, Coroutines/Flow
+- Room, DataStore, Navigation Compose
 
-### 🎯 Task Management
-- Create, edit, and organize tasks with ease
-- Mark tasks as complete with a simple tap
-- Set priorities and due dates for better organization
-- Categorize tasks for better organization
-- Search and filter tasks to find what you need quickly
-
-### 🎨 Personalized Experience
-- Beautiful Material 3 design with smooth animations
-- Light and dark theme support (auto or manual)
-- Customizable app appearance with accent colors
-- Daily motivational quotes to keep you inspired (configurable)
-- Intuitive and responsive interface
-
-### ⚡ Productivity Boosters
-- Task completion statistics and insights
-- Clean and focused interface to minimize distractions
-- Quick actions for common tasks
-- Swipe gestures for quick task management
-
-## 🏗️ Technical Stack
-
-- **Language**: 100% Kotlin
-- **UI**: Jetpack Compose with Material 3
-- **Architecture**: MVVM (Model-View-ViewModel)
-- **Asynchronous**: Kotlin Coroutines with Flow
-- **Dependency Injection**: Hilt
-- **Local Storage**: Room Database
-- **Preferences**: DataStore
-- **Navigation**: Navigation Compose
-
-## 📱 Screenshots
-
-<!-- Add your app screenshots here -->
-| Home Screen | Task Details | Settings |
-|-------------|--------------|-----------|
-| ![Home](screenshots/home.png) | ![Task Details](screenshots/task_details.png) | ![Settings](screenshots/settings.png) |
-
-## 🚀 Getting Started
-
-### Prerequisites
-- Android Studio Flamingo (2022.2.1) or newer
-- Android SDK 24 (Android 7.0) or higher
-- Kotlin 1.9.10 or later
-
-### Installation
+## Getting Started
 1. Clone the repository:
    ```bash
-   git clone https://github.com/yourusername/kairo.git
+   git clone https://github.com/e24141042-glitch/Kairo
    ```
-2. Open the project in Android Studio
-3. Sync the project with Gradle files
-4. Run the app on an emulator or physical device
+2. Open in Android Studio and let Gradle sync.
+3. Run on a device/emulator from Android Studio or via CLI.
 
-### Building from Source
-1. Ensure you have the latest version of Android Studio installed
-2. Open the project in Android Studio
-3. Wait for the project to sync and download all dependencies
-4. Click on "Run 'app'" or press Shift+F10
+## Build & Install (CLI)
+- Build debug APK:
+  ```bash
+  ./gradlew assembleDebug
+  ```
+- Install on a connected device:
+  ```bash
+  ./gradlew installDebug
+  ```
+  Ensure a device/emulator is connected and authorized.
 
-## 🛠️ Features in Detail
+## Google Calendar Integration
+- Connect your Google account in `Settings → Integrations → Google Calendar`.
+- On connect, Kairo creates a dedicated calendar and stores its ID.
+- View and copy the Kairo Calendar ID in Settings.
+- For tasks that are synced, the Add/Edit Task screen displays the Google Calendar Event ID with a copy button.
 
-### Task Management
-- **Create Tasks**: Quickly add tasks with titles, descriptions, and due dates
-- **Organize**: Categorize tasks and set priorities
-- **Complete**: Mark tasks as complete with a simple tap
-- **Search**: Find tasks instantly with the search functionality
-
-### Customization
-- **Themes**: Choose between light and dark theme
-- **Daily Quotes**: Toggle daily motivational quotes on the home screen
-- **Task Display**: Customize how tasks are displayed and sorted
-
-### Settings
-- **Appearance**: Customize the app's look and feel
-- **Notifications**: Configure task reminders and notifications
-- **Data**: Backup and restore your tasks
-
-## 🤝 Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
-
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
-
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## 🙏 Acknowledgments
-
-- [Jetpack Compose](https://developer.android.com/jetpack/compose)
-- [Material Design 3](https://m3.material.io/)
-- [Kotlin Coroutines](https://kotlinlang.org/docs/coroutines-overview.html)
-- [Hilt](https://developer.android.com/training/dependency-injection/hilt-android)
-- [Room](https://developer.android.com/training/data-storage/room)
-- **Action Buttons**: Complete or snooze directly from notifications
-
-### Themes
-- **Light Theme**: Clean, bright interface
-- **Dark Theme**: Easy on the eyes for low light
-- **Dynamic Colors**: Android 12+ adaptive theming
-- **Custom Accents**: Priority-based color coding
+## Development Notes
+- Build outputs directory `app_build/` is ignored by Git (see `.gitignore`).
+- Latest feature work was pushed to branch `Calender_mod`; review and merge into `main` as needed.
 
 ## Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests if applicable
-5. Submit a pull request
+- Fork the repo, create a feature branch, open a PR.
 
 ## License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
-
-## Acknowledgments
-
-- Material Design 3 guidelines
-- Android Jetpack libraries
-- Jetpack Compose documentation
-- Room database documentation
+- MIT (see `LICENSE`).
 
