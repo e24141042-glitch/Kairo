@@ -51,6 +51,12 @@ fun HomeScreen(
     val isProgressMinimized = remember { mutableStateOf(false) }
     
     val listState = rememberLazyListState()
+    val coroutineScope = rememberCoroutineScope()
+    
+    // Confirmation dialog states
+    var showDeleteTaskDialog by remember { mutableStateOf(false) }
+    var taskToDelete by remember { mutableStateOf<com.kairo.app.data.Task?>(null) }
+    var showDeleteCompletedDialog by remember { mutableStateOf(false) }
     
     LaunchedEffect(Unit) {
         // Load categories for filtering
@@ -146,7 +152,7 @@ fun HomeScreen(
                     
                     if (statistics.completedTasks > 0) {
                         TextButton(
-                            onClick = { taskViewModel.deleteCompletedTasks() }
+                            onClick = { showDeleteCompletedDialog = true }
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Delete,
@@ -175,8 +181,9 @@ fun HomeScreen(
                     val dismissState = rememberSwipeToDismissBoxState(
                         confirmValueChange = { value ->
                             if (value == SwipeToDismissBoxValue.EndToStart) {
-                                taskViewModel.deleteTask(task)
-                                true
+                                taskToDelete = task
+                                showDeleteTaskDialog = true
+                                false // Don't dismiss yet, wait for confirmation
                             } else {
                                 false
                             }
@@ -248,6 +255,67 @@ fun HomeScreen(
                 }
             }
         }
+    }
+    
+    // Confirmation dialog for individual task deletion
+    if (showDeleteTaskDialog && taskToDelete != null) {
+        AlertDialog(
+            onDismissRequest = {
+                showDeleteTaskDialog = false
+                taskToDelete = null
+            },
+            title = { Text("Delete Task") },
+            text = { Text("Are you sure you want to delete \"${taskToDelete!!.title}\"? This action cannot be undone.") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        taskToDelete?.let { task ->
+                            taskViewModel.deleteTask(task)
+                        }
+                        showDeleteTaskDialog = false
+                        taskToDelete = null
+                    }
+                ) {
+                    Text("Delete")
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        showDeleteTaskDialog = false
+                        taskToDelete = null
+                    }
+                ) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
+    
+    // Confirmation dialog for deleting completed tasks
+    if (showDeleteCompletedDialog) {
+        AlertDialog(
+            onDismissRequest = { showDeleteCompletedDialog = false },
+            title = { Text("Delete Completed Tasks") },
+            text = { Text("Are you sure you want to delete all ${statistics.completedTasks} completed tasks? This action cannot be undone.") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        taskViewModel.deleteCompletedTasks()
+                        showDeleteCompletedDialog = false
+                    }
+                ) {
+                    Text("Delete")
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = { showDeleteCompletedDialog = false }
+                ) {
+                    Text("Cancel")
+                }
+            }
+        )
     }
 }
 

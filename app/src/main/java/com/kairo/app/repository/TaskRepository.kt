@@ -70,6 +70,12 @@ class TaskRepository(
     suspend fun getTaskById(taskId: Long): Task? = taskDao.getTaskById(taskId)
     
     /**
+     * Get task by Google Calendar event ID
+     */
+    fun getTaskByGoogleCalendarEventId(eventId: String): Flow<Task?> = 
+        taskDao.getTaskByGoogleCalendarEventId(eventId)
+
+    /**
      * Get all categories
      */
     fun getAllCategories(): Flow<List<String>> = taskDao.getAllCategories()

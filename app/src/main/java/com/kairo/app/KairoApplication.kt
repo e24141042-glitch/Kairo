@@ -20,11 +20,14 @@ class KairoApplication : Application() {
         AppContainer.init(applicationContext)
 
         applicationScope.launch {
-            AppContainer.userPreferencesRepository.userPreferences.collect { prefs ->
-                prefs.googleCalendarAccount?.let { accountName ->
-                    val googleSignInAccount = GoogleSignIn.getLastSignedInAccount(applicationContext)
-                    if (googleSignInAccount != null && googleSignInAccount.email == accountName) {
-                        AppContainer.googleCalendarService.initialize(googleSignInAccount)
+            val prefs = AppContainer.userPreferencesRepository.userPreferences.firstOrNull()
+            prefs?.googleCalendarAccount?.let { accountName ->
+                val googleSignInAccount = GoogleSignIn.getLastSignedInAccount(applicationContext)
+                if (googleSignInAccount != null && googleSignInAccount.email == accountName) {
+                    AppContainer.googleCalendarService.initialize(googleSignInAccount)
+                    // Ensure the calendar ID exists; create or fetch it if missing
+                    if (prefs.googleCalendarId == null) {
+                        AppContainer.googleCalendarService.createKairoCalendar()
                     }
                 }
             }

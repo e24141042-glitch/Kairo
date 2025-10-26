@@ -29,6 +29,9 @@ object AppContainer {
     lateinit var googleCalendarService: GoogleCalendarService
         private set
 
+    val context: Context
+        get() = applicationContext
+
     private val Context.ds by preferencesDataStore(name = "user_preferences")
 
     fun init(context: Context) {
@@ -43,7 +46,7 @@ object AppContainer {
 
         userPreferencesRepository = UserPreferencesRepository(dataStore)
         taskRepository = TaskRepository(database.taskDao(), userPreferencesRepository)
-        googleCalendarService = GoogleCalendarService(applicationContext, taskRepository)
+        googleCalendarService = GoogleCalendarService(applicationContext, taskRepository, userPreferencesRepository)
 
         initialized = true
     }

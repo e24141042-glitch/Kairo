@@ -6,6 +6,9 @@ plugins {
     id("com.google.gms.google-services")
 }
 
+// Use alternate build directory to avoid Windows file lock issues
+buildDir = file("${rootDir}/app_build")
+
 android {
     namespace = "com.kairo.app"
     compileSdk = 35

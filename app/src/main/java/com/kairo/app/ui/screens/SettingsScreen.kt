@@ -11,6 +11,10 @@ import androidx.compose.material.icons.filled.FormatQuote
 import androidx.compose.material.icons.filled.Sort
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.CalendarMonth
+import androidx.compose.material.icons.filled.Sync
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Error
+import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -21,6 +25,8 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.kairo.app.data.UserPreferences
 import com.kairo.app.viewmodel.SettingsViewModel
 import kotlinx.coroutines.launch
+import java.text.SimpleDateFormat
+import java.util.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -31,6 +37,10 @@ fun SettingsScreen(
 ) {
     val userPreferences by viewModel.userPreferences.collectAsState(initial = UserPreferences())
     val snackbarHostState = remember { SnackbarHostState() }
+    
+    // Confirmation dialog states
+    var showDeleteAllTasksDialog by remember { mutableStateOf(false) }
+    var showDeleteCompletedTasksDialog by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
@@ -142,6 +152,17 @@ fun SettingsScreen(
                         }
                     }
                 }
+
+                // Sync Status Display (only show if connected)
+                if (connectedAccount != null) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    SyncStatusDisplay(
+                        syncStatus = userPreferences.syncStatus,
+                        lastSyncTime = userPreferences.lastSyncTime,
+                        errorMessage = userPreferences.syncErrorMessage,
+                        onManualSync = { viewModel.triggerManualSync() }
+                    )
+                }
             }
 
             // Data Management Section
@@ -154,8 +175,7 @@ fun SettingsScreen(
                 ) {
                     TextButton(
                         onClick = {
-                            // TODO: Show confirmation dialog
-                            viewModel.deleteCompletedTasks()
+                            showDeleteCompletedTasksDialog = true
                         }
                     ) {
                         Text("Clear")
@@ -170,8 +190,7 @@ fun SettingsScreen(
                 ) {
                     TextButton(
                         onClick = {
-                            // TODO: Show confirmation dialog
-                            viewModel.deleteAllTasks()
+                            showDeleteAllTasksDialog = true
                         }
                     ) {
                         Text("Clear All")
@@ -208,6 +227,58 @@ fun SettingsScreen(
                 }
             }
         }
+    }
+    
+    // Confirmation dialog for deleting completed tasks
+    if (showDeleteCompletedTasksDialog) {
+        AlertDialog(
+            onDismissRequest = { showDeleteCompletedTasksDialog = false },
+            title = { Text("Delete Completed Tasks") },
+            text = { Text("Are you sure you want to delete all completed tasks? This action cannot be undone.") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        viewModel.deleteCompletedTasks()
+                        showDeleteCompletedTasksDialog = false
+                    }
+                ) {
+                    Text("Delete")
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = { showDeleteCompletedTasksDialog = false }
+                ) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
+    
+    // Confirmation dialog for deleting all tasks
+    if (showDeleteAllTasksDialog) {
+        AlertDialog(
+            onDismissRequest = { showDeleteAllTasksDialog = false },
+            title = { Text("Delete All Tasks") },
+            text = { Text("Are you sure you want to delete ALL tasks? This will permanently remove all your tasks and cannot be undone.") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        viewModel.deleteAllTasks()
+                        showDeleteAllTasksDialog = false
+                    }
+                ) {
+                    Text("Delete All")
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = { showDeleteAllTasksDialog = false }
+                ) {
+                    Text("Cancel")
+                }
+            }
+        )
     }
 }
 
@@ -277,6 +348,104 @@ private fun SettingsItem(
         }
 
         content()
+    }
+}
+
+@Composable
+private fun SyncStatusDisplay(
+    syncStatus: UserPreferences.SyncStatus,
+    lastSyncTime: Long?,
+    errorMessage: String?,
+    onManualSync: () -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = when (syncStatus) {
+                UserPreferences.SyncStatus.SUCCESS -> MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
+                UserPreferences.SyncStatus.ERROR -> MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.3f)
+                UserPreferences.SyncStatus.SYNCING -> MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.3f)
+                UserPreferences.SyncStatus.IDLE -> MaterialTheme.colorScheme.surfaceVariant
+            }
+        )
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    val (icon, iconColor, statusText) = when (syncStatus) {
+                        UserPreferences.SyncStatus.SUCCESS -> Triple(
+                            Icons.Default.CheckCircle,
+                            MaterialTheme.colorScheme.primary,
+                            "Sync successful"
+                        )
+                        UserPreferences.SyncStatus.ERROR -> Triple(
+                            Icons.Default.Error,
+                            MaterialTheme.colorScheme.error,
+                            "Sync failed"
+                        )
+                        UserPreferences.SyncStatus.SYNCING -> Triple(
+                            Icons.Default.Sync,
+                            MaterialTheme.colorScheme.secondary,
+                            "Syncing..."
+                        )
+                        UserPreferences.SyncStatus.IDLE -> Triple(
+                            Icons.Default.Schedule,
+                            MaterialTheme.colorScheme.onSurfaceVariant,
+                            "Ready to sync"
+                        )
+                    }
+
+                    Icon(
+                        imageVector = icon,
+                        contentDescription = statusText,
+                        tint = iconColor,
+                        modifier = Modifier.size(20.dp)
+                    )
+
+                    Spacer(modifier = Modifier.width(8.dp))
+
+                    Column {
+                        Text(
+                            text = statusText,
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.Medium
+                        )
+
+                        if (lastSyncTime != null) {
+                            val formatter = SimpleDateFormat("MMM dd, HH:mm", Locale.getDefault())
+                            Text(
+                                text = "Last sync: ${formatter.format(Date(lastSyncTime))}",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                }
+
+                if (syncStatus != UserPreferences.SyncStatus.SYNCING) {
+                    TextButton(onClick = onManualSync) {
+                        Text("Sync Now")
+                    }
+                }
+            }
+
+            if (syncStatus == UserPreferences.SyncStatus.ERROR && !errorMessage.isNullOrBlank()) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "Error: $errorMessage",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.error
+                )
+            }
+        }
     }
 }
 

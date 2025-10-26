@@ -132,6 +132,14 @@ class TaskViewModel(
     fun deleteTask(task: Task) {
         viewModelScope.launch {
             try {
+                // Delete linked Google Calendar event if present
+                task.googleCalendarEventId?.let { eventId ->
+                    try {
+                        AppContainer.googleCalendarService.deleteEventFromGoogleCalendar(eventId)
+                    } catch (e: Exception) {
+                        android.util.Log.w("TaskViewModel", "Failed to delete Google Calendar event $eventId: ${e.message}")
+                    }
+                }
                 taskRepository.deleteTask(task)
                 loadStatistics() // Refresh statistics
             } catch (e: Exception) {
@@ -185,6 +193,17 @@ class TaskViewModel(
     fun deleteCompletedTasks() {
         viewModelScope.launch {
             try {
+                // Delete linked Google Calendar events for completed tasks
+                val completedTasks = taskRepository.getCompletedTasks().first()
+                completedTasks.forEach { t ->
+                    t.googleCalendarEventId?.let { eventId ->
+                        try {
+                            AppContainer.googleCalendarService.deleteEventFromGoogleCalendar(eventId)
+                        } catch (e: Exception) {
+                            android.util.Log.w("TaskViewModel", "Failed to delete Google Calendar event $eventId: ${e.message}")
+                        }
+                    }
+                }
                 taskRepository.deleteCompletedTasks()
                 loadStatistics() // Refresh statistics
             } catch (e: Exception) {

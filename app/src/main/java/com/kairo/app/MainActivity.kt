@@ -30,9 +30,14 @@ import android.util.Log
 import android.content.Intent
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.firstOrNull
 
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.ExistingWorkPolicy
+import androidx.work.Constraints
+import androidx.work.NetworkType
 import com.kairo.app.data.google_calendar.GoogleCalendarSyncWorker
 import java.util.concurrent.TimeUnit
 
@@ -52,6 +57,7 @@ class MainActivity : ComponentActivity() {
                     Log.d("MainActivity", "Google Sign-In successful for: $email")
                     lifecycleScope.launch {
                         AppContainer.userPreferencesRepository.updateGoogleCalendarAccount(email)
+                        AppContainer.googleCalendarService.createKairoCalendar()
                     }
                 },
                 onFailure = {
@@ -85,14 +91,25 @@ class MainActivity : ComponentActivity() {
     override fun onStop() {
         super.onStop()
         lifecycleScope.launch {
-            AppContainer.userPreferencesRepository.userPreferences.collect { prefs ->
-                prefs.googleCalendarAccount?.let { accountName ->
-                    Log.d("MainActivity", "App stopping, enqueuing Google Calendar sync work...")
-                    val syncWorkRequest = OneTimeWorkRequestBuilder<GoogleCalendarSyncWorker>()
-                        .setInitialDelay(10, TimeUnit.SECONDS) // Delay to allow app to close gracefully
-                        .build()
-                    WorkManager.getInstance(applicationContext).enqueue(syncWorkRequest)
-                }
+            val prefs = AppContainer.userPreferencesRepository.userPreferences.firstOrNull()
+            val accountName = prefs?.googleCalendarAccount
+            if (accountName != null) {
+                Log.d("MainActivity", "App stopping, enqueuing Google Calendar sync work...")
+    
+                val constraints = Constraints.Builder()
+                    .setRequiredNetworkType(NetworkType.CONNECTED)
+                    .build()
+    
+                val syncWorkRequest = OneTimeWorkRequestBuilder<GoogleCalendarSyncWorker>()
+                    .setConstraints(constraints)
+                    .build()
+    
+                WorkManager.getInstance(applicationContext)
+                    .enqueueUniqueWork(
+                        "GoogleCalendarSync",
+                        ExistingWorkPolicy.KEEP,
+                        syncWorkRequest
+                    )
             }
         }
     }

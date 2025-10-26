@@ -122,6 +122,12 @@ interface TaskDao {
     /**
      * Mark task as pending
      */
+    @Query("SELECT * FROM tasks WHERE googleCalendarEventId = :eventId")
+    fun getTaskByGoogleCalendarEventId(eventId: String): Flow<Task?>
+
+    /**
+     * Mark task as pending
+     */
     @Query("UPDATE tasks SET isCompleted = 0, completedAt = :completedAt WHERE id = :taskId")
     suspend fun markTaskPending(taskId: Long, completedAt: Date?)
 }
