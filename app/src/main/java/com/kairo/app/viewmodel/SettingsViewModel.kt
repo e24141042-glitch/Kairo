@@ -93,6 +93,15 @@ class SettingsViewModel(
     }
 
     /**
+     * Update Google Calendar reminder time (milliseconds)
+     */
+    fun updateReminderTime(timeMs: Long) {
+        viewModelScope.launch {
+            userPreferencesRepository.updateReminderTime(timeMs)
+        }
+    }
+
+    /**
      * Clear completed tasks
      */
     fun deleteCompletedTasks() {

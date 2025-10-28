@@ -133,6 +133,10 @@ class GoogleCalendarService(
 
         withContext(Dispatchers.IO) {
             try {
+                // Read reminder preference in minutes
+                val reminderMs = userPreferencesRepository.userPreferences.first().reminderTime
+                val reminderMinutes = (reminderMs / 60_000L).toInt().coerceAtLeast(1)
+
                 val events = calendarService?.events()?.list(calendarId)?.execute()
                 val eventIds = events?.items?.map { it.id } ?: emptyList()
                 val taskIds = tasks.map { it.googleCalendarEventId }
@@ -142,7 +146,7 @@ class GoogleCalendarService(
 
                 tasks.forEach { task ->
                     if (task.googleCalendarEventId == null) {
-                        val event = createGoogleCalendarEvent(task)
+                        val event = createGoogleCalendarEvent(task, reminderMinutes)
                         val insertedEvent = calendarService?.events()?.insert(calendarId, event)?.execute()
                         insertedEvent?.id?.let {
                             taskRepository.updateTask(task.copy(googleCalendarEventId = it))
@@ -151,15 +155,17 @@ class GoogleCalendarService(
                         try {
                             val existingEvent = calendarService?.events()?.get(calendarId, task.googleCalendarEventId)?.execute()
                             if (existingEvent != null) {
-                                val updatedEvent = createGoogleCalendarEvent(task)
+                                val updatedEvent = createGoogleCalendarEvent(task, reminderMinutes)
+                                val remindersChanged = !remindersEqual(existingEvent.reminders, updatedEvent.reminders)
                                 if (existingEvent.summary != updatedEvent.summary || 
                                     existingEvent.description != updatedEvent.description ||
-                                    existingEvent.start?.dateTime?.value != task.dueDateTime?.time) {
+                                    existingEvent.start?.dateTime?.value != task.dueDateTime?.time ||
+                                    remindersChanged) {
                                     calendarService?.events()?.update(calendarId, task.googleCalendarEventId, updatedEvent)?.execute()
                                 }
                             } else {
                                 // Event doesn't exist anymore, create a new one
-                                val event = createGoogleCalendarEvent(task)
+                                val event = createGoogleCalendarEvent(task, reminderMinutes)
                                 val insertedEvent = calendarService?.events()?.insert(calendarId, event)?.execute()
                                 insertedEvent?.id?.let {
                                     taskRepository.updateTask(task.copy(googleCalendarEventId = it))
@@ -168,7 +174,7 @@ class GoogleCalendarService(
                         } catch (e: Exception) {
                             // Event not found or other error, create a new one
                             Log.w("GoogleCalendarService", "Event ${task.googleCalendarEventId} not found, creating new one: ${e.message}")
-                            val event = createGoogleCalendarEvent(task)
+                            val event = createGoogleCalendarEvent(task, reminderMinutes)
                             val insertedEvent = calendarService?.events()?.insert(calendarId, event)?.execute()
                             insertedEvent?.id?.let {
                                 taskRepository.updateTask(task.copy(googleCalendarEventId = it))
@@ -265,7 +271,7 @@ class GoogleCalendarService(
     }
 
     // Example of how to create an event (will be used in syncTasksToGoogleCalendar)
-    private fun createGoogleCalendarEvent(task: Task): Event {
+    private fun createGoogleCalendarEvent(task: Task, reminderMinutes: Int): Event {
         val event = Event()
             .setSummary(task.title)
             .setDescription(task.description)
@@ -280,14 +286,23 @@ class GoogleCalendarService(
             val reminders = Event.Reminders().apply {
                 useDefault = false
                 overrides = listOf(
-                    EventReminder().setMethod("popup").setMinutes(24 * 60), // 1 day before
-                    EventReminder().setMethod("popup").setMinutes(60) // 1 hour before
+                    EventReminder().setMethod("popup").setMinutes(reminderMinutes)
                 )
             }
             event.reminders = reminders
         }
 
         return event
+    }
+
+    private fun remindersEqual(a: Event.Reminders?, b: Event.Reminders?): Boolean {
+        val ao = a?.overrides ?: emptyList()
+        val bo = b?.overrides ?: emptyList()
+        if (a?.useDefault != b?.useDefault) return false
+        if (ao.size != bo.size) return false
+        return ao.zip(bo).all { (r1, r2) ->
+            r1.method == r2.method && r1.minutes == r2.minutes
+        }
     }
 }
 

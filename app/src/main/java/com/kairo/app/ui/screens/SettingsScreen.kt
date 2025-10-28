@@ -158,6 +158,13 @@ fun SettingsScreen(
                     }
                 }
 
+                // Reminder Time Selection for Google Calendar
+                Spacer(modifier = Modifier.height(8.dp))
+                ReminderTimeSelector(
+                    currentReminderMs = userPreferences.reminderTime,
+                    onReminderTimeChange = viewModel::updateReminderTime
+                )
+
                 // Sync Status Display (only show if connected)
                 if (connectedAccount != null) {
                     Spacer(modifier = Modifier.height(8.dp))
@@ -452,6 +459,94 @@ private fun SyncStatusDisplay(
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.error
                 )
+            }
+        }
+    }
+}
+
+@Composable
+@OptIn(ExperimentalMaterial3Api::class)
+private fun ReminderTimeSelector(
+    currentReminderMs: Long,
+    onReminderTimeChange: (Long) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val options = listOf(
+        5L * 60_000L to "5 min",
+        10L * 60_000L to "10 min",
+        15L * 60_000L to "15 min",
+        30L * 60_000L to "30 min",
+        60L * 60_000L to "1 hour",
+        120L * 60_000L to "2 hours",
+        180L * 60_000L to "3 hours",
+        240L * 60_000L to "4 hours",
+        300L * 60_000L to "5 hours",
+        360L * 60_000L to "6 hours",
+        24L * 60_000L to "1 day"
+    )
+
+    // Find label for current value or show minutes
+    val currentLabel = options.find { it.first == currentReminderMs }?.second
+        ?: run {
+            val minutes = (currentReminderMs / 60_000L).coerceAtLeast(1L)
+            "$minutes min"
+        }
+
+    var expanded by remember { mutableStateOf(false) }
+
+    Column(modifier = modifier) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                imageVector = Icons.Default.Schedule,
+                contentDescription = "Reminder Time",
+                modifier = Modifier.size(24.dp),
+                tint = MaterialTheme.colorScheme.primary
+            )
+
+            Spacer(modifier = Modifier.width(16.dp))
+
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = "Reminder Time",
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = FontWeight.Medium
+                )
+                Text(
+                    text = "Default Google Calendar reminder",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+
+            ExposedDropdownMenuBox(
+                expanded = expanded,
+                onExpandedChange = { expanded = !expanded }
+            ) {
+                OutlinedTextField(
+                    value = currentLabel,
+                    onValueChange = {},
+                    readOnly = true,
+                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+                    modifier = Modifier
+                        .menuAnchor()
+                        .width(140.dp)
+                )
+                ExposedDropdownMenu(
+                    expanded = expanded,
+                    onDismissRequest = { expanded = false }
+                ) {
+                    options.forEach { (ms, label) ->
+                        DropdownMenuItem(
+                            text = { Text(label) },
+                            onClick = {
+                                onReminderTimeChange(ms)
+                                expanded = false
+                            }
+                        )
+                    }
+                }
             }
         }
     }
